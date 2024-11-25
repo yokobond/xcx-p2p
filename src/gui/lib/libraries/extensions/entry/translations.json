@@ -1,0 +1,14 @@
+{
+  "en": {
+    "xcxP2P.entry.name": "P2P",
+    "xcxP2P.entry.description": "Description of this extension"
+  },
+  "ja": {
+    "xcxP2P.entry.name": "P2P",
+    "xcxP2P.entry.description": "拡張機能の説明"
+  },
+  "ja-Hira": {
+    "xcxP2P.entry.name": "P2P",
+    "xcxP2P.entry.description": "かくちょうきのうのせつめい"
+  }
+}

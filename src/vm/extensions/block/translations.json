@@ -1,0 +1,14 @@
+{
+  "en": {
+    "xcxP2P.name": "P2P",
+    "xcxP2P.doIt": "do it [SCRIPT]"
+  },
+  "ja": {
+    "xcxP2P.name": "P2P",
+    "xcxP2P.doIt": "[SCRIPT] を実行する"
+  },
+  "ja-Hira": {
+    "xcxP2P.name": "P2P",
+    "xcxP2P.doIt": "[SCRIPT] をじっこうする"
+  }
+}
