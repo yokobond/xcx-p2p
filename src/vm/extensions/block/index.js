@@ -1,9 +1,10 @@
 import BlockType from '../../extension-support/block-type';
 import ArgumentType from '../../extension-support/argument-type';
-import Cast from '../../util/cast';
+// import Cast from '../../util/cast';
 import log from '../../util/log';
 import translations from './translations.json';
 import blockIcon from './block-icon.png';
+import SignalingChannel from './file-signaling-channel';
 
 /**
  * Formatter which is used for translation.
@@ -36,7 +37,7 @@ const EXTENSION_ID = 'xcxP2P';
 let extensionURL = 'https://yokobond.github.io/xcx-p2p/dist/xcxP2P.mjs';
 
 /**
- * Scratch 3.0 blocks for example of Xcratch.
+ * Class for the extension blocks.
  */
 class ExtensionBlocks {
     /**
@@ -98,6 +99,77 @@ class ExtensionBlocks {
             // Replace 'formatMessage' to a formatter which is used in the runtime.
             formatMessage = runtime.formatMessage;
         }
+
+        this.signalingChannel = new SignalingChannel();
+        this.signalingChannel.addEventListener('message', async event => {
+            const message = event.data;
+            try {
+                if (message.type === 'offer') {
+                    await this.peerConnection.setRemoteDescription(message);
+                    const answer = await this.peerConnection.createAnswer();
+                    await this.peerConnection.setLocalDescription(answer);
+                    await this.signalingChannel.send(answer);
+                    log.log('Remote description set and answer sent:', message);
+                } else if (message.type === 'answer') {
+                    await this.peerConnection.setRemoteDescription(message);
+                    log.log('Remote description set:', message);
+                } else if (message.type === 'candidate') {
+                    await this.peerConnection.addIceCandidate(message.candidate);
+                    log.log('ICE candidate added:', message.candidate);
+                }
+            } catch (err) {
+                log.warn('Error processing signaling message:', err);
+            }
+        });
+
+        this.initializePeerConnection();
+    }
+
+    initializePeerConnection () {
+        this.peerConnection = new RTCPeerConnection({
+            iceServers: [
+                {urls: 'stun:stun.l.google.com:19302'}
+            ]
+        });
+
+        // Setup peer connection event handlers
+        this.peerConnection.onicecandidate = ({candidate}) => {
+            if (candidate) {
+                this.signalingChannel.send({
+                    type: 'candidate',
+                    candidate: candidate
+                }).catch(err => log.warn('Error sending ICE candidate:', err));
+            } else {
+                log.log('ICE candidate gathering complete');
+                this.signalingChannel.send(this.peerConnection.localDescription);
+            }
+        };
+
+        this.peerConnection.onconnectionstatechange = () => {
+            log.log(`Connection state: ${this.peerConnection.connectionState}`);
+            if (this.peerConnection.connectionState === 'connected') {
+                this.signalingChannel.disconnect();
+            }
+        };
+
+        this.peerConnection.ondatachannel = event => {
+            const dataChannel = event.channel;
+            this.setupDataChannel(dataChannel);
+        };
+        this.peerConnection.createDataChannel('channel');
+    }
+
+    setupDataChannel (dataChannel) {
+        this.dataChannel = dataChannel;
+        dataChannel.onopen = () => {
+            log.log('Data channel opened');
+        };
+        dataChannel.onclose = () => {
+            log.log('Data channel closed');
+        };
+        dataChannel.onmessage = event => {
+            log.log('Received:', event.data);
+        };
     }
 
     /**
@@ -113,21 +185,46 @@ class ExtensionBlocks {
             showStatusButton: false,
             blocks: [
                 {
-                    opcode: 'do-it',
-                    blockType: BlockType.REPORTER,
-                    blockAllThreads: false,
+                    opcode: 'makeSignal',
+                    blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'xcxP2P.doIt',
-                        default: 'do it [SCRIPT]',
-                        description: 'execute javascript for example'
+                        id: 'xcxP2P.makeSignal',
+                        default: 'make signal [SIGNAL_NAME]',
+                        description: 'make WebRTC signaling offer'
                     }),
-                    func: 'doIt',
                     arguments: {
-                        SCRIPT: {
+                        SIGNAL_NAME: {
                             type: ArgumentType.STRING,
-                            defaultValue: '3 + 4'
+                            defaultValue: 'name'
                         }
-                    }
+                    },
+                    func: 'makeSignal'
+                },
+                {
+                    opcode: 'connectSignal',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'xcxP2P.connectSignal',
+                        default: 'connect signal [SIGNAL_NAME]',
+                        description: 'take WebRTC signaling offer'
+                    }),
+                    arguments: {
+                        SIGNAL_NAME: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name'
+                        }
+                    },
+                    func: 'connectSignal'
+                },
+                {
+                    opcode: 'disconnectPeer',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'xcxP2P.disconnectPeer',
+                        default: 'disconnect peer',
+                        description: 'disconnect the WebRTC peer connection'
+                    }),
+                    func: 'disconnectPeer'
                 }
             ],
             menus: {
@@ -135,11 +232,33 @@ class ExtensionBlocks {
         };
     }
 
-    doIt (args) {
-        const statement = Cast.toString(args.SCRIPT);
-        const func = new Function(`return (${statement})`);
-        log.log(`doIt: ${statement}`);
-        return func.call(this);
+    async makeSignal (args) {
+        const signalName = String(args.SIGNAL_NAME).trim();
+        await this.signalingChannel.connect(signalName);
+        const offer = await this.peerConnection.createOffer();
+        await this.peerConnection.setLocalDescription(offer);
+        await this.signalingChannel.send(offer);
+    }
+
+    async connectSignal (args) {
+        const signalName = String(args.SIGNAL_NAME).trim();
+        await this.signalingChannel.connect(signalName);
+    }
+
+    disconnectPeer () {
+        if (this.dataChannel) {
+            this.dataChannel.close();
+            log.log('Data channel closed');
+            this.dataChannel = null;
+        }
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            log.log('Peer connection closed');
+            this.peerConnection = null;
+            
+            // Re-initialize peer connection for next use
+            this.initializePeerConnection();
+        }
     }
 }
 
