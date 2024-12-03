@@ -1,6 +1,6 @@
 import BlockType from '../../extension-support/block-type';
 import ArgumentType from '../../extension-support/argument-type';
-// import Cast from '../../util/cast';
+import Cast from '../../util/cast';
 import log from '../../util/log';
 import translations from './translations.json';
 import blockIcon from './block-icon.png';
@@ -122,10 +122,27 @@ class ExtensionBlocks {
             }
         });
 
+        /**
+         * Channel name for the data channel.
+         */
+        this.dataChannelName = 'xcxP2P';
+
+        /**
+         * Local value holder when the channel is not connected.
+         * @type {object<string, string>}
+         */
+        this.dataChannelValues = {};
+
+        /**
+         * Local event holder when the channel is not connected.
+         * @type {object}
+         */
+        this.lastDataChannelEvent = null;
+
         this.initializePeerConnection();
     }
 
-    initializePeerConnection () {
+    initializePeerConnection (isInitiator) {
         this.peerConnection = new RTCPeerConnection({
             iceServers: [
                 {urls: 'stun:stun.l.google.com:19302'}
@@ -156,9 +173,17 @@ class ExtensionBlocks {
             const dataChannel = event.channel;
             this.setupDataChannel(dataChannel);
         };
-        this.peerConnection.createDataChannel('channel');
+
+        if (isInitiator) {
+            const dataChannel = this.peerConnection.createDataChannel(this.dataChannelName);
+            this.setupDataChannel(dataChannel);
+        }
     }
 
+    /**
+     * Setup the data channel.
+     * @param {RTCDataChannel} dataChannel - the data channel
+     */
     setupDataChannel (dataChannel) {
         this.dataChannel = dataChannel;
         dataChannel.onopen = () => {
@@ -169,6 +194,17 @@ class ExtensionBlocks {
         };
         dataChannel.onmessage = event => {
             log.log('Received:', event.data);
+            const message = JSON.parse(event.data);
+            switch (message.type) {
+            case 'SET_VALUE':
+                this.dataChannelValues[message.content.key] = message.content.value;
+                break;
+            case 'EVENT':
+                this.onEvent(message.content);
+                break;
+            default:
+                log.warn('Unknown message type:', message.type);
+            }
         };
     }
 
@@ -225,6 +261,108 @@ class ExtensionBlocks {
                         description: 'disconnect the WebRTC peer connection'
                     }),
                     func: 'disconnectPeer'
+                },
+                '---',
+                {
+                    opcode: 'setValue',
+                    blockType: BlockType.COMMAND,
+                    blockAllThreads: false,
+                    text: formatMessage({
+                        id: 'xcxP2P.setValue',
+                        default: 'set value of [KEY] to [VALUE]',
+                        description: 'set value of the key'
+                    }),
+                    func: 'setValue',
+                    arguments: {
+                        KEY: {
+                            type: ArgumentType.STRING,
+                            defaultValue: formatMessage({
+                                id: 'xcxP2P.setValue.defaultKey',
+                                default: 'key'
+                            })
+                        },
+                        VALUE: {
+                            type: ArgumentType.STRING,
+                            defaultValue: formatMessage({
+                                id: 'xcxP2P.setValue.defaultValue',
+                                default: 'value'
+                            })
+                        }
+                    }
+                },
+                {
+                    opcode: 'valueOf',
+                    blockType: BlockType.REPORTER,
+                    blockAllThreads: false,
+                    text: formatMessage({
+                        id: 'xcxP2P.valueOf',
+                        default: 'value of [KEY]'
+                    }),
+                    func: 'valueOf',
+                    arguments: {
+                        KEY: {
+                            type: ArgumentType.STRING,
+                            defaultValue: formatMessage({
+                                id: 'xcxP2P.valueOf.defaultKey',
+                                default: 'key'
+                            })
+                        }
+                    }
+                },
+                '---',
+                {
+                    opcode: 'sendEvent',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'xcxP2P.sendEvent',
+                        default: 'send event [TYPE] with [DATA]'
+                    }),
+                    arguments: {
+                        TYPE: {
+                            type: ArgumentType.STRING,
+                            defaultValue: formatMessage({
+                                id: 'xcxP2P.sendEvent.defaultEvent',
+                                default: 'event'
+                            })
+                        },
+                        DATA: {
+                            type: ArgumentType.STRING,
+                            defaultValue: formatMessage({
+                                id: 'xcxP2P.sendEvent.defaultData',
+                                default: 'data'
+                            })
+                        }
+                    }
+                },
+                {
+                    opcode: 'whenEventReceived',
+                    blockType: BlockType.EVENT,
+                    text: formatMessage({
+                        id: 'xcxP2P.whenEventReceived',
+                        default: 'when event received'
+                    }),
+                    isEdgeActivated: false,
+                    shouldRestartExistingThreads: false
+                },
+                {
+                    opcode: 'lastEventType',
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true,
+                    text: formatMessage({
+                        id: 'xcxP2P.lastEventType',
+                        default: 'event'
+                    })
+                },
+                {
+                    opcode: 'lastEventData',
+                    blockType: BlockType.REPORTER,
+                    disableMonitor: true,
+                    text: formatMessage({
+                        id: 'xcxP2P.lastEventData',
+                        default: 'data of event'
+                    }),
+                    arguments: {
+                    }
                 }
             ],
             menus: {
@@ -234,6 +372,7 @@ class ExtensionBlocks {
 
     async makeSignal (args) {
         const signalName = String(args.SIGNAL_NAME).trim();
+        this.initializePeerConnection(true);
         await this.signalingChannel.connect(signalName);
         const offer = await this.peerConnection.createOffer();
         await this.peerConnection.setLocalDescription(offer);
@@ -242,6 +381,7 @@ class ExtensionBlocks {
 
     async connectSignal (args) {
         const signalName = String(args.SIGNAL_NAME).trim();
+        this.initializePeerConnection(false);
         await this.signalingChannel.connect(signalName);
     }
 
@@ -259,6 +399,105 @@ class ExtensionBlocks {
             // Re-initialize peer connection for next use
             this.initializePeerConnection();
         }
+    }
+
+    /**
+     * Return the value of the key.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.KEY - the key.
+     * @return {string} - the value of the key.
+     */
+    valueOf (args) {
+        const key = String(args.KEY).trim();
+        return this.dataChannelValues[key] ? this.dataChannelValues[key] : '';
+    }
+
+    /**
+     * Set the value of the key.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.KEY - the key.
+     * @param {string} args.VALUE - the value.
+     * @return {string} - the result of setting the value.
+     */
+    setValue (args) {
+        const key = String(args.KEY).trim();
+        const value = Cast.toString(args.VALUE);
+        this.dataChannelValues[key] = value;
+        if (!this.dataChannel) {
+            return Promise.resolve(`local ${key} = ${value}`);
+        }
+        try {
+            const message = {
+                type: 'SET_VALUE',
+                content: {
+                    key: key,
+                    value: value
+                }
+            };
+            this.dataChannel.send(JSON.stringify(message));
+            log.debug(`send SET_VALUE: ${key} = ${value}`);
+        } catch (error) {
+            return Promise.resolve(error.message);
+        }
+        // resolve after a delay to process another message when this block is used in a loop.
+        return Promise.resolve(`send ${key} = ${value}`);
+    }
+
+    /**
+     * Handle the event.
+     * @param {object} event - the event.
+     */
+    onEvent (event) {
+        this.lastDataChannelEvent = event;
+        this.runtime.startHats('xcxP2P_whenEventReceived');
+    }
+
+    /**
+     * Return the last event type.
+     * @return {string} - the last event type.
+     */
+    lastEventType () {
+        const event = this.lastDataChannelEvent;
+        return event ? event.type : '';
+    }
+
+    /**
+     * Return the last event data.
+     * @return {string} - the last event data.
+     */
+    lastEventData () {
+        const event = this.lastDataChannelEvent;
+        return event ? event.data : '';
+    }
+
+    /**
+     * Send the event.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.TYPE - the event type.
+     * @param {string} args.DATA - the event data.
+     * @return {Promise<string>} - resolve with the result of sending the event.
+     */
+    sendEvent (args) {
+        const type = String(args.TYPE).trim();
+        const data = Cast.toString(args.DATA);
+        this.onEvent({type: type, data: data});
+        if (!this.dataChannel) {
+            return Promise.resolve(`local event: ${type} data: ${data}`);
+        }
+        try {
+            const message = {
+                type: 'EVENT',
+                content: {
+                    type: type,
+                    data: data
+                }
+            };
+            this.dataChannel.send(JSON.stringify(message));
+        } catch (error) {
+            return Promise.resolve(error.message);
+        }
+        // resolve after a delay for the event to be sent.
+        return Promise.resolve(`send event: ${type} data: ${data}`);
     }
 }
 
