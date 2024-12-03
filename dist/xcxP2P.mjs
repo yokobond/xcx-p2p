@@ -1742,95 +1742,45 @@ function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) 
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _callSuper(t, o, e) { return o = _getPrototypeOf(o), _possibleConstructorReturn(t, _isNativeReflectConstruct() ? Reflect.construct(o, [], _getPrototypeOf(t).constructor) : o.apply(t, e)); }
 function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
-function _asyncIterator(r) { var n, t, o, e = 2; for ("undefined" != typeof Symbol && (t = Symbol.asyncIterator, o = Symbol.iterator); e--;) { if (t && null != (n = r[t])) return n.call(r); if (o && null != (n = r[o])) return new AsyncFromSyncIterator(n.call(r)); t = "@@asyncIterator", o = "@@iterator"; } throw new TypeError("Object is not async iterable"); }
-function AsyncFromSyncIterator(r) { function AsyncFromSyncIteratorContinuation(r) { if (Object(r) !== r) return Promise.reject(new TypeError(r + " is not an object.")); var n = r.done; return Promise.resolve(r.value).then(function (r) { return { value: r, done: n }; }); } return AsyncFromSyncIterator = function AsyncFromSyncIterator(r) { this.s = r, this.n = r.next; }, AsyncFromSyncIterator.prototype = { s: null, n: null, next: function next() { return AsyncFromSyncIteratorContinuation(this.n.apply(this.s, arguments)); }, return: function _return(r) { var n = this.s.return; return void 0 === n ? Promise.resolve({ value: r, done: !0 }) : AsyncFromSyncIteratorContinuation(n.apply(this.s, arguments)); }, throw: function _throw(r) { var n = this.s.return; return void 0 === n ? Promise.reject(r) : AsyncFromSyncIteratorContinuation(n.apply(this.s, arguments)); } }, new AsyncFromSyncIterator(r); }
 
 /**
- * File-based signaling channel for WebRTC connections.
+ * Signaling channel using Google Sheets as the backend.
  */
-var FileSignalingChannel = /*#__PURE__*/function (_EventTarget) {
-  function FileSignalingChannel() {
+var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
+  function SheetSignalingChannel() {
     var _this;
-    _classCallCheck$1(this, FileSignalingChannel);
-    _this = _callSuper(this, FileSignalingChannel);
-    _this.filePrefix = 'webrtc-signal-';
+    _classCallCheck$1(this, SheetSignalingChannel);
+    _this = _callSuper(this, SheetSignalingChannel);
     _this._connected = false;
     _this._id = Math.random().toString(36).substr(2, 9);
     _this._pollInterval = null;
-    _this._signalDirHandle = null;
+    _this._signalName = null;
+
+    // Replace with your Google Apps Script web app URL
+    _this._serverUrl = 'https://script.google.com/macros/s/AKfycbx3RFGGAckbU-okJ2Cvnse7KmexGVUO8qcWvlevJczsx0wpl_a-Kxe_fi7ul0z4zISG/exec';
     return _this;
   }
-  _inherits(FileSignalingChannel, _EventTarget);
-  return _createClass$1(FileSignalingChannel, [{
+  _inherits(SheetSignalingChannel, _EventTarget);
+  return _createClass$1(SheetSignalingChannel, [{
     key: "connected",
     get: function get() {
       return this._connected;
     }
   }, {
     key: "connect",
-    value: function () {
-      var _connect = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(signalName) {
-        var dirHandle;
-        return _regeneratorRuntime.wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              if (!this._connected) {
-                _context.next = 2;
-                break;
-              }
-              return _context.abrupt("return");
-            case 2:
-              _context.prev = 2;
-              _context.next = 5;
-              return window.showDirectoryPicker({
-                mode: 'readwrite',
-                startIn: 'downloads'
-              });
-            case 5:
-              dirHandle = _context.sent;
-              _context.prev = 6;
-              _context.next = 9;
-              return dirHandle.getDirectoryHandle(signalName, {
-                create: true // Creates if doesn't exist
-              });
-            case 9:
-              this._signalDirHandle = _context.sent;
-              _context.next = 16;
-              break;
-            case 12:
-              _context.prev = 12;
-              _context.t0 = _context["catch"](6);
-              log$1.warn("Failed to create subdirectory ".concat(signalName, ":"), _context.t0);
-              throw _context.t0;
-            case 16:
-              this._connected = true;
-              this.startPolling();
-              this.dispatchEvent(new Event('connected'));
-              _context.next = 25;
-              break;
-            case 21:
-              _context.prev = 21;
-              _context.t1 = _context["catch"](2);
-              log$1.warn('Failed to access directory:', _context.t1);
-              throw _context.t1;
-            case 25:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this, [[2, 21], [6, 12]]);
-      }));
-      function connect(_x) {
-        return _connect.apply(this, arguments);
-      }
-      return connect;
-    }()
+    value: function connect(signalName) {
+      if (this._connected) return;
+      this._signalName = signalName;
+      this._connected = true;
+      this.startPolling();
+      this.dispatchEvent(new Event('connected'));
+    }
   }, {
     key: "disconnect",
     value: function disconnect() {
       if (!this._connected) return;
       this._connected = false;
       this.stopPolling();
-      this._signalDirHandle = null;
       this.dispatchEvent(new Event('disconnected'));
     }
   }, {
@@ -1853,33 +1803,45 @@ var FileSignalingChannel = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "send",
     value: function () {
-      var _send = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2(message) {
-        var signalData, filename;
-        return _regeneratorRuntime.wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
+      var _send = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(message) {
+        return _regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
             case 0:
               if (this._connected) {
-                _context2.next = 2;
+                _context.next = 2;
                 break;
               }
               throw new Error('Not connected');
             case 2:
-              signalData = {
-                from: this._id,
-                type: message.type,
-                data: message,
-                timestamp: Date.now()
-              };
-              filename = "".concat(this.filePrefix).concat(message.type, "-").concat(this._id, ".json");
-              _context2.next = 6;
-              return this.saveToFile(signalData, filename);
-            case 6:
+              _context.prev = 2;
+              _context.next = 5;
+              return fetch(this._serverUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  signalName: this._signalName,
+                  fromId: this._id,
+                  message: message
+                })
+              });
+            case 5:
+              log$1.debug('Message sent:', message);
+              _context.next = 11;
+              break;
+            case 8:
+              _context.prev = 8;
+              _context.t0 = _context["catch"](2);
+              log$1.warn('Error sending message:', _context.t0);
+            case 11:
             case "end":
-              return _context2.stop();
+              return _context.stop();
           }
-        }, _callee2, this);
+        }, _callee, this, [[2, 8]]);
       }));
-      function send(_x2) {
+      function send(_x) {
         return _send.apply(this, arguments);
       }
       return send;
@@ -1887,267 +1849,66 @@ var FileSignalingChannel = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "pollMessages",
     value: function () {
-      var _pollMessages = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
-        var files, _iterator2, _step2, file, message;
-        return _regeneratorRuntime.wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
+      var _pollMessages = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
+        var url, response, messages, _iterator, _step, msg;
+        return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              _context3.next = 2;
-              return this.listSignalFiles();
+              if (this._connected) {
+                _context2.next = 2;
+                break;
+              }
+              return _context2.abrupt("return");
             case 2:
-              files = _context3.sent;
-              _iterator2 = _createForOfIteratorHelper(files);
-              _context3.prev = 4;
-              _iterator2.s();
+              _context2.prev = 2;
+              url = "".concat(this._serverUrl, "?signalName=").concat(encodeURIComponent(this._signalName)) + "&recipientId=".concat(encodeURIComponent(this._id));
+              _context2.next = 6;
+              return fetch(url, {
+                method: 'GET',
+                cache: 'no-cache'
+              });
             case 6:
-              if ((_step2 = _iterator2.n()).done) {
-                _context3.next = 18;
+              response = _context2.sent;
+              if (response.ok) {
+                _context2.next = 9;
                 break;
               }
-              file = _step2.value;
-              if (file.includes(this._id)) {
-                _context3.next = 16;
-                break;
-              }
-              _context3.next = 11;
-              return this.loadFromFile(file);
+              throw new Error("Server returned ".concat(response.status));
+            case 9:
+              _context2.next = 11;
+              return response.json();
             case 11:
-              message = _context3.sent;
-              if (!(message && message.data)) {
-                _context3.next = 16;
-                break;
+              messages = _context2.sent;
+              _iterator = _createForOfIteratorHelper(messages);
+              try {
+                for (_iterator.s(); !(_step = _iterator.n()).done;) {
+                  msg = _step.value;
+                  this.dispatchEvent(new MessageEvent('message', {
+                    data: msg.message
+                  }));
+                  log$1.debug('Message received:', msg.message);
+                }
+              } catch (err) {
+                _iterator.e(err);
+              } finally {
+                _iterator.f();
               }
-              this.dispatchEvent(new MessageEvent('message', {
-                data: message.data
-              }));
-              _context3.next = 16;
-              return this.deleteFile(file);
+              _context2.next = 19;
+              break;
             case 16:
-              _context3.next = 6;
-              break;
-            case 18:
-              _context3.next = 23;
-              break;
-            case 20:
-              _context3.prev = 20;
-              _context3.t0 = _context3["catch"](4);
-              _iterator2.e(_context3.t0);
-            case 23:
-              _context3.prev = 23;
-              _iterator2.f();
-              return _context3.finish(23);
-            case 26:
+              _context2.prev = 16;
+              _context2.t0 = _context2["catch"](2);
+              log$1.warn('Error polling messages:', _context2.t0);
+            case 19:
             case "end":
-              return _context3.stop();
+              return _context2.stop();
           }
-        }, _callee3, this, [[4, 20, 23, 26]]);
+        }, _callee2, this, [[2, 16]]);
       }));
       function pollMessages() {
         return _pollMessages.apply(this, arguments);
       }
       return pollMessages;
-    }()
-  }, {
-    key: "listSignalFiles",
-    value: function () {
-      var _listSignalFiles = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee4() {
-        var files, _iteratorAbruptCompletion, _didIteratorError, _iteratorError, _iterator, _step, entry;
-        return _regeneratorRuntime.wrap(function _callee4$(_context4) {
-          while (1) switch (_context4.prev = _context4.next) {
-            case 0:
-              if (this._signalDirHandle) {
-                _context4.next = 2;
-                break;
-              }
-              return _context4.abrupt("return", []);
-            case 2:
-              files = [];
-              _iteratorAbruptCompletion = false;
-              _didIteratorError = false;
-              _context4.prev = 5;
-              _iterator = _asyncIterator(this._signalDirHandle.values());
-            case 7:
-              _context4.next = 9;
-              return _iterator.next();
-            case 9:
-              if (!(_iteratorAbruptCompletion = !(_step = _context4.sent).done)) {
-                _context4.next = 15;
-                break;
-              }
-              entry = _step.value;
-              if (entry.kind === 'file' && entry.name.startsWith(this.filePrefix) && entry.name.endsWith('.json')) {
-                files.push(entry.name);
-              }
-            case 12:
-              _iteratorAbruptCompletion = false;
-              _context4.next = 7;
-              break;
-            case 15:
-              _context4.next = 21;
-              break;
-            case 17:
-              _context4.prev = 17;
-              _context4.t0 = _context4["catch"](5);
-              _didIteratorError = true;
-              _iteratorError = _context4.t0;
-            case 21:
-              _context4.prev = 21;
-              _context4.prev = 22;
-              if (!(_iteratorAbruptCompletion && _iterator.return != null)) {
-                _context4.next = 26;
-                break;
-              }
-              _context4.next = 26;
-              return _iterator.return();
-            case 26:
-              _context4.prev = 26;
-              if (!_didIteratorError) {
-                _context4.next = 29;
-                break;
-              }
-              throw _iteratorError;
-            case 29:
-              return _context4.finish(26);
-            case 30:
-              return _context4.finish(21);
-            case 31:
-              return _context4.abrupt("return", files);
-            case 32:
-            case "end":
-              return _context4.stop();
-          }
-        }, _callee4, this, [[5, 17, 21, 31], [22,, 26, 30]]);
-      }));
-      function listSignalFiles() {
-        return _listSignalFiles.apply(this, arguments);
-      }
-      return listSignalFiles;
-    }()
-  }, {
-    key: "saveToFile",
-    value: function () {
-      var _saveToFile = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee5(data, filename) {
-        var fileHandle, writable;
-        return _regeneratorRuntime.wrap(function _callee5$(_context5) {
-          while (1) switch (_context5.prev = _context5.next) {
-            case 0:
-              if (this._signalDirHandle) {
-                _context5.next = 2;
-                break;
-              }
-              return _context5.abrupt("return");
-            case 2:
-              _context5.prev = 2;
-              _context5.next = 5;
-              return this._signalDirHandle.getFileHandle(filename, {
-                create: true
-              });
-            case 5:
-              fileHandle = _context5.sent;
-              _context5.next = 8;
-              return fileHandle.createWritable();
-            case 8:
-              writable = _context5.sent;
-              _context5.next = 11;
-              return writable.write(JSON.stringify(data));
-            case 11:
-              _context5.next = 13;
-              return writable.close();
-            case 13:
-              _context5.next = 18;
-              break;
-            case 15:
-              _context5.prev = 15;
-              _context5.t0 = _context5["catch"](2);
-              log$1.warn('Error saving file:', _context5.t0);
-            case 18:
-            case "end":
-              return _context5.stop();
-          }
-        }, _callee5, this, [[2, 15]]);
-      }));
-      function saveToFile(_x3, _x4) {
-        return _saveToFile.apply(this, arguments);
-      }
-      return saveToFile;
-    }()
-  }, {
-    key: "loadFromFile",
-    value: function () {
-      var _loadFromFile = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee6(filename) {
-        var fileHandle, file, text;
-        return _regeneratorRuntime.wrap(function _callee6$(_context6) {
-          while (1) switch (_context6.prev = _context6.next) {
-            case 0:
-              if (this._signalDirHandle) {
-                _context6.next = 2;
-                break;
-              }
-              return _context6.abrupt("return", null);
-            case 2:
-              _context6.prev = 2;
-              _context6.next = 5;
-              return this._signalDirHandle.getFileHandle(filename);
-            case 5:
-              fileHandle = _context6.sent;
-              _context6.next = 8;
-              return fileHandle.getFile();
-            case 8:
-              file = _context6.sent;
-              _context6.next = 11;
-              return file.text();
-            case 11:
-              text = _context6.sent;
-              return _context6.abrupt("return", JSON.parse(text));
-            case 15:
-              _context6.prev = 15;
-              _context6.t0 = _context6["catch"](2);
-              log$1.warn('Error loading file:', _context6.t0);
-              return _context6.abrupt("return", null);
-            case 19:
-            case "end":
-              return _context6.stop();
-          }
-        }, _callee6, this, [[2, 15]]);
-      }));
-      function loadFromFile(_x5) {
-        return _loadFromFile.apply(this, arguments);
-      }
-      return loadFromFile;
-    }()
-  }, {
-    key: "deleteFile",
-    value: function () {
-      var _deleteFile = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee7(filename) {
-        return _regeneratorRuntime.wrap(function _callee7$(_context7) {
-          while (1) switch (_context7.prev = _context7.next) {
-            case 0:
-              if (this._signalDirHandle) {
-                _context7.next = 2;
-                break;
-              }
-              return _context7.abrupt("return");
-            case 2:
-              _context7.prev = 2;
-              _context7.next = 5;
-              return this._signalDirHandle.removeEntry(filename);
-            case 5:
-              _context7.next = 10;
-              break;
-            case 7:
-              _context7.prev = 7;
-              _context7.t0 = _context7["catch"](2);
-              log$1.warn('Error deleting file:', _context7.t0);
-            case 10:
-            case "end":
-              return _context7.stop();
-          }
-        }, _callee7, this, [[2, 7]]);
-      }));
-      function deleteFile(_x6) {
-        return _deleteFile.apply(this, arguments);
-      }
-      return deleteFile;
     }()
   }]);
 }(/*#__PURE__*/_wrapNativeSuper(EventTarget));
@@ -2200,7 +1961,7 @@ var ExtensionBlocks = /*#__PURE__*/function () {
       // Replace 'formatMessage' to a formatter which is used in the runtime.
       formatMessage = runtime.formatMessage;
     }
-    this.signalingChannel = new FileSignalingChannel();
+    this.signalingChannel = new SheetSignalingChannel();
     this.signalingChannel.addEventListener('message', /*#__PURE__*/function () {
       var _ref = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(event) {
         var message, answer;
