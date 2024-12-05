@@ -1,10 +1,10 @@
 import BlockType from '../../extension-support/block-type';
 import ArgumentType from '../../extension-support/argument-type';
 import Cast from '../../util/cast';
-import log from '../../util/log';
 import translations from './translations.json';
 import blockIcon from './block-icon.png';
 import SignalingChannel from './sheet-signaling-channel';
+import SharingPeer from './sharing-peer';
 
 /**
  * Formatter which is used for translation.
@@ -100,112 +100,134 @@ class ExtensionBlocks {
             formatMessage = runtime.formatMessage;
         }
 
+        /**
+         * The signaling channel.
+         * @type {SignalingChannel}
+         */
         this.signalingChannel = new SignalingChannel();
-        this.signalingChannel.addEventListener('message', async event => {
-            const message = event.data;
-            try {
-                if (message.type === 'offer') {
-                    await this.peerConnection.setRemoteDescription(message);
-                    const answer = await this.peerConnection.createAnswer();
-                    await this.peerConnection.setLocalDescription(answer);
-                    await this.signalingChannel.send(answer);
-                    log.log('Remote description set and answer sent:', message);
-                } else if (message.type === 'answer') {
-                    await this.peerConnection.setRemoteDescription(message);
-                    log.log('Remote description set:', message);
-                } else if (message.type === 'candidate') {
-                    await this.peerConnection.addIceCandidate(message.candidate);
-                    log.log('ICE candidate added:', message.candidate);
-                }
-            } catch (err) {
-                log.warn('Error processing signaling message:', err);
+
+        /**
+         * The peer connection manager.
+         * @type {SharingPeer}
+         */
+        this.peer = new SharingPeer(this.signalingChannel);
+
+        this.peer.addEventListener('dataChannelStateChanged', event => {
+            if (event.detail === 'open') {
+                this.signalingChannel.stopNegotiation();
+                // this.runtime.startHats('xcxP2P_whenConnected');
+            }
+            if (event.detail === 'closed') {
+                // this.runtime.startHats('xcxP2P_whenDisconnected');
             }
         });
-
-        /**
-         * Channel name for the data channel.
-         */
-        this.dataChannelName = 'xcxP2P';
-
-        /**
-         * Local value holder when the channel is not connected.
-         * @type {object<string, string>}
-         */
-        this.dataChannelValues = {};
-
-        /**
-         * Local event holder when the channel is not connected.
-         * @type {object}
-         */
-        this.lastDataChannelEvent = null;
-
-        this.initializePeerConnection();
-    }
-
-    initializePeerConnection (isInitiator) {
-        this.peerConnection = new RTCPeerConnection({
-            iceServers: [
-                {urls: 'stun:stun.l.google.com:19302'}
-            ]
-        });
-
-        // Setup peer connection event handlers
-        this.peerConnection.onicecandidate = ({candidate}) => {
-            if (candidate) {
-                this.signalingChannel.send({
-                    type: 'candidate',
-                    candidate: candidate
-                }).catch(err => log.warn('Error sending ICE candidate:', err));
-            } else {
-                log.log('ICE candidate gathering complete');
-                this.signalingChannel.send(this.peerConnection.localDescription);
-            }
-        };
-
-        this.peerConnection.onconnectionstatechange = () => {
-            log.log(`Connection state: ${this.peerConnection.connectionState}`);
-            if (this.peerConnection.connectionState === 'connected') {
-                this.signalingChannel.disconnect();
-            }
-        };
-
-        this.peerConnection.ondatachannel = event => {
-            const dataChannel = event.channel;
-            this.setupDataChannel(dataChannel);
-        };
-
-        if (isInitiator) {
-            const dataChannel = this.peerConnection.createDataChannel(this.dataChannelName);
-            this.setupDataChannel(dataChannel);
-        }
+        // Add event listener for shared events
+        this.peer.addEventListener('sharedEvent', event => this.onSharedEvent(event.detail));
     }
 
     /**
-     * Setup the data channel.
-     * @param {RTCDataChannel} dataChannel - the data channel
+     * The signaling state.
+     * @type {string<'disconnected'|'connected'|'offering'|'answering'>}
+     * @readonly
+     * @returns {string} - the signaling state.
      */
-    setupDataChannel (dataChannel) {
-        this.dataChannel = dataChannel;
-        dataChannel.onopen = () => {
-            log.log('Data channel opened');
-        };
-        dataChannel.onclose = () => {
-            log.log('Data channel closed');
-        };
-        dataChannel.onmessage = event => {
-            log.log('Received:', event.data);
-            const message = JSON.parse(event.data);
-            switch (message.type) {
-            case 'SET_VALUE':
-                this.dataChannelValues[message.content.key] = message.content.value;
-                break;
-            case 'EVENT':
-                this.onEvent(message.content);
-                break;
-            default:
-                log.warn('Unknown message type:', message.type);
-            }
-        };
+    get signalingState () {
+        return this.signalingChannel.signalingState;
+    }
+
+    async makeSignal (args) {
+        const signalName = String(args.SIGNAL_NAME).trim();
+        if (this.signalingChannel.signalName === signalName &&
+            this.signalingState === 'offering') {
+            return Promise.resolve('Already offering');
+        }
+        this.peer.disconnectPeer();
+        this.peer.initializePeerConnection(true);
+        const offer = await this.peer.peerConnection.createOffer();
+        await this.peer.peerConnection.setLocalDescription(offer);
+        await this.signalingChannel.connect(signalName);
+        await this.signalingChannel.startOffering(offer);
+        return `Offering signal ${signalName}`;
+    }
+
+    async connectSignal (args) {
+        const signalName = String(args.SIGNAL_NAME).trim();
+        if (this.signalingChannel.signalName === signalName &&
+            this.signalingState === 'answering') {
+            return Promise.resolve('Already answering');
+        }
+        this.peer.disconnectPeer();
+        this.peer.initializePeerConnection(false);
+        await this.signalingChannel.connect(signalName);
+        this.signalingChannel.startAnswering();
+        return `Answering signal ${signalName}`;
+    }
+
+
+    disconnectPeer () {
+        this.peer.disconnectPeer();
+    }
+
+    /**
+     * Return the value of the key.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.KEY - the key.
+     * @return {string} - the value of the key.
+     */
+    valueOf (args) {
+        const key = String(args.KEY).trim();
+        return this.peer.valueOf(key);
+    }
+
+    /**
+     * Set the value of the key.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.KEY - the key.
+     * @param {string} args.VALUE - the value.
+     * @return {string} - the result of setting the value.
+     */
+    setValue (args) {
+        const key = String(args.KEY).trim();
+        const value = Cast.toString(args.VALUE);
+        return this.peer.setValue(key, value);
+    }
+
+    /**
+     * Return the last event type.
+     * @return {string} - the last event type.
+     */
+    lastEventType () {
+        return this.peer.lastEventType();
+    }
+
+    /**
+     * Return the last event data.
+     * @return {string} - the last event data.
+     */
+    lastEventData () {
+        return this.peer.lastEventData();
+    }
+
+    /**
+     * Send the event.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.TYPE - the event type.
+     * @param {string} args.DATA - the event data.
+     * @return {Promise<string>} - resolve with the result of sending the event.
+     */
+    sendEvent (args) {
+        const type = String(args.TYPE).trim();
+        const data = Cast.toString(args.DATA);
+        return this.peer.sendEvent(type, data);
+    }
+
+    /**
+     * Handle the shared event.
+     * @param {object} event - The event data.
+     */
+    onSharedEvent (event) {
+        this.peer.lastDataChannelEvent = event;
+        this.runtime.startHats('xcxP2P_whenEventReceived');
     }
 
     /**
@@ -368,136 +390,6 @@ class ExtensionBlocks {
             menus: {
             }
         };
-    }
-
-    async makeSignal (args) {
-        const signalName = String(args.SIGNAL_NAME).trim();
-        this.initializePeerConnection(true);
-        await this.signalingChannel.connect(signalName);
-        const offer = await this.peerConnection.createOffer();
-        await this.peerConnection.setLocalDescription(offer);
-        await this.signalingChannel.send(offer);
-    }
-
-    async connectSignal (args) {
-        const signalName = String(args.SIGNAL_NAME).trim();
-        this.initializePeerConnection(false);
-        await this.signalingChannel.connect(signalName);
-    }
-
-    disconnectPeer () {
-        if (this.dataChannel) {
-            this.dataChannel.close();
-            log.log('Data channel closed');
-            this.dataChannel = null;
-        }
-        if (this.peerConnection) {
-            this.peerConnection.close();
-            log.log('Peer connection closed');
-            this.peerConnection = null;
-            
-            // Re-initialize peer connection for next use
-            this.initializePeerConnection();
-        }
-    }
-
-    /**
-     * Return the value of the key.
-     * @param {object} args - arguments for the block.
-     * @param {string} args.KEY - the key.
-     * @return {string} - the value of the key.
-     */
-    valueOf (args) {
-        const key = String(args.KEY).trim();
-        return this.dataChannelValues[key] ? this.dataChannelValues[key] : '';
-    }
-
-    /**
-     * Set the value of the key.
-     * @param {object} args - arguments for the block.
-     * @param {string} args.KEY - the key.
-     * @param {string} args.VALUE - the value.
-     * @return {string} - the result of setting the value.
-     */
-    setValue (args) {
-        const key = String(args.KEY).trim();
-        const value = Cast.toString(args.VALUE);
-        this.dataChannelValues[key] = value;
-        if (!this.dataChannel) {
-            return Promise.resolve(`local ${key} = ${value}`);
-        }
-        try {
-            const message = {
-                type: 'SET_VALUE',
-                content: {
-                    key: key,
-                    value: value
-                }
-            };
-            this.dataChannel.send(JSON.stringify(message));
-            log.debug(`send SET_VALUE: ${key} = ${value}`);
-        } catch (error) {
-            return Promise.resolve(error.message);
-        }
-        // resolve after a delay to process another message when this block is used in a loop.
-        return Promise.resolve(`send ${key} = ${value}`);
-    }
-
-    /**
-     * Handle the event.
-     * @param {object} event - the event.
-     */
-    onEvent (event) {
-        this.lastDataChannelEvent = event;
-        this.runtime.startHats('xcxP2P_whenEventReceived');
-    }
-
-    /**
-     * Return the last event type.
-     * @return {string} - the last event type.
-     */
-    lastEventType () {
-        const event = this.lastDataChannelEvent;
-        return event ? event.type : '';
-    }
-
-    /**
-     * Return the last event data.
-     * @return {string} - the last event data.
-     */
-    lastEventData () {
-        const event = this.lastDataChannelEvent;
-        return event ? event.data : '';
-    }
-
-    /**
-     * Send the event.
-     * @param {object} args - arguments for the block.
-     * @param {string} args.TYPE - the event type.
-     * @param {string} args.DATA - the event data.
-     * @return {Promise<string>} - resolve with the result of sending the event.
-     */
-    sendEvent (args) {
-        const type = String(args.TYPE).trim();
-        const data = Cast.toString(args.DATA);
-        this.onEvent({type: type, data: data});
-        if (!this.dataChannel) {
-            return Promise.resolve(`local event: ${type} data: ${data}`);
-        }
-        try {
-            const message = {
-                type: 'EVENT',
-                content: {
-                    type: type,
-                    data: data
-                }
-            };
-            this.dataChannel.send(JSON.stringify(message));
-        } catch (error) {
-            return Promise.resolve(error.message);
-        }
-        // resolve after a delay for the event to be sent.
-        return Promise.resolve(`send event: ${type} data: ${data}`);
     }
 }
 
