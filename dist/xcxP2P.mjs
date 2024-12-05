@@ -1110,6 +1110,109 @@ var Cast = /*#__PURE__*/function () {
 var cast = Cast;
 var Cast$1 = /*@__PURE__*/getDefaultExportFromCjs(cast);
 
+var en = {
+	"xcxP2P.name": "P2P",
+	"xcxP2P.doIt": "do it [SCRIPT]"
+};
+var ja = {
+	"xcxP2P.name": "P2P",
+	"xcxP2P.doIt": "[SCRIPT] を実行する"
+};
+var translations = {
+	en: en,
+	ja: ja,
+	"ja-Hira": {
+	"xcxP2P.name": "P2P",
+	"xcxP2P.doIt": "[SCRIPT] をじっこうする"
+}
+};
+
+var img = "data:image/png;base64,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";
+
+function _assertThisInitialized(e) {
+  if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  return e;
+}
+
+function _possibleConstructorReturn(t, e) {
+  if (e && ("object" == _typeof$2(e) || "function" == typeof e)) return e;
+  if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined");
+  return _assertThisInitialized(t);
+}
+
+function _getPrototypeOf(t) {
+  return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) {
+    return t.__proto__ || Object.getPrototypeOf(t);
+  }, _getPrototypeOf(t);
+}
+
+function _setPrototypeOf(t, e) {
+  return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) {
+    return t.__proto__ = e, t;
+  }, _setPrototypeOf(t, e);
+}
+
+function _inherits(t, e) {
+  if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function");
+  t.prototype = Object.create(e && e.prototype, {
+    constructor: {
+      value: t,
+      writable: !0,
+      configurable: !0
+    }
+  }), Object.defineProperty(t, "prototype", {
+    writable: !1
+  }), e && _setPrototypeOf(t, e);
+}
+
+function _isNativeFunction(t) {
+  try {
+    return -1 !== Function.toString.call(t).indexOf("[native code]");
+  } catch (n) {
+    return "function" == typeof t;
+  }
+}
+
+function _isNativeReflectConstruct$2() {
+  try {
+    var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
+  } catch (t) {}
+  return (_isNativeReflectConstruct$2 = function _isNativeReflectConstruct() {
+    return !!t;
+  })();
+}
+
+function _construct(t, e, r) {
+  if (_isNativeReflectConstruct$2()) return Reflect.construct.apply(null, arguments);
+  var o = [null];
+  o.push.apply(o, e);
+  var p = new (t.bind.apply(t, o))();
+  return r && _setPrototypeOf(p, r.prototype), p;
+}
+
+function _wrapNativeSuper(t) {
+  var r = "function" == typeof Map ? new Map() : void 0;
+  return _wrapNativeSuper = function _wrapNativeSuper(t) {
+    if (null === t || !_isNativeFunction(t)) return t;
+    if ("function" != typeof t) throw new TypeError("Super expression must either be null or a function");
+    if (void 0 !== r) {
+      if (r.has(t)) return r.get(t);
+      r.set(t, Wrapper);
+    }
+    function Wrapper() {
+      return _construct(t, arguments, _getPrototypeOf(this).constructor);
+    }
+    return Wrapper.prototype = Object.create(t.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: !1,
+        writable: !0,
+        configurable: !0
+      }
+    }), _setPrototypeOf(Wrapper, t);
+  }, _wrapNativeSuper(t);
+}
+
 var web = {exports: {}};
 
 var minilog$2 = {exports: {}};
@@ -1634,114 +1737,11 @@ minilog.enable();
 var log = minilog('vm');
 var log$1 = /*@__PURE__*/getDefaultExportFromCjs(log);
 
-var en = {
-	"xcxP2P.name": "P2P",
-	"xcxP2P.doIt": "do it [SCRIPT]"
-};
-var ja = {
-	"xcxP2P.name": "P2P",
-	"xcxP2P.doIt": "[SCRIPT] を実行する"
-};
-var translations = {
-	en: en,
-	ja: ja,
-	"ja-Hira": {
-	"xcxP2P.name": "P2P",
-	"xcxP2P.doIt": "[SCRIPT] をじっこうする"
-}
-};
-
-var img = "data:image/png;base64,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";
-
-function _assertThisInitialized(e) {
-  if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  return e;
-}
-
-function _possibleConstructorReturn(t, e) {
-  if (e && ("object" == _typeof$2(e) || "function" == typeof e)) return e;
-  if (void 0 !== e) throw new TypeError("Derived constructors may only return object or undefined");
-  return _assertThisInitialized(t);
-}
-
-function _getPrototypeOf(t) {
-  return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) {
-    return t.__proto__ || Object.getPrototypeOf(t);
-  }, _getPrototypeOf(t);
-}
-
-function _setPrototypeOf(t, e) {
-  return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) {
-    return t.__proto__ = e, t;
-  }, _setPrototypeOf(t, e);
-}
-
-function _inherits(t, e) {
-  if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function");
-  t.prototype = Object.create(e && e.prototype, {
-    constructor: {
-      value: t,
-      writable: !0,
-      configurable: !0
-    }
-  }), Object.defineProperty(t, "prototype", {
-    writable: !1
-  }), e && _setPrototypeOf(t, e);
-}
-
-function _isNativeFunction(t) {
-  try {
-    return -1 !== Function.toString.call(t).indexOf("[native code]");
-  } catch (n) {
-    return "function" == typeof t;
-  }
-}
-
-function _isNativeReflectConstruct$1() {
-  try {
-    var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
-  } catch (t) {}
-  return (_isNativeReflectConstruct$1 = function _isNativeReflectConstruct() {
-    return !!t;
-  })();
-}
-
-function _construct(t, e, r) {
-  if (_isNativeReflectConstruct$1()) return Reflect.construct.apply(null, arguments);
-  var o = [null];
-  o.push.apply(o, e);
-  var p = new (t.bind.apply(t, o))();
-  return r && _setPrototypeOf(p, r.prototype), p;
-}
-
-function _wrapNativeSuper(t) {
-  var r = "function" == typeof Map ? new Map() : void 0;
-  return _wrapNativeSuper = function _wrapNativeSuper(t) {
-    if (null === t || !_isNativeFunction(t)) return t;
-    if ("function" != typeof t) throw new TypeError("Super expression must either be null or a function");
-    if (void 0 !== r) {
-      if (r.has(t)) return r.get(t);
-      r.set(t, Wrapper);
-    }
-    function Wrapper() {
-      return _construct(t, arguments, _getPrototypeOf(this).constructor);
-    }
-    return Wrapper.prototype = Object.create(t.prototype, {
-      constructor: {
-        value: Wrapper,
-        enumerable: !1,
-        writable: !0,
-        configurable: !0
-      }
-    }), _setPrototypeOf(Wrapper, t);
-  }, _wrapNativeSuper(t);
-}
-
-function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
-function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
-function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function _callSuper(t, o, e) { return o = _getPrototypeOf(o), _possibleConstructorReturn(t, _isNativeReflectConstruct() ? Reflect.construct(o, [], _getPrototypeOf(t).constructor) : o.apply(t, e)); }
-function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+function _createForOfIteratorHelper$1(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray$1(r)) || e) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray$1(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray$1(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray$1(r, a) : void 0; } }
+function _arrayLikeToArray$1(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _callSuper$1(t, o, e) { return o = _getPrototypeOf(o), _possibleConstructorReturn(t, _isNativeReflectConstruct$1() ? Reflect.construct(o, [], _getPrototypeOf(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct$1() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct$1 = function _isNativeReflectConstruct() { return !!t; })(); }
 
 /**
  * Signaling channel using Google Sheets as the backend.
@@ -1750,11 +1750,42 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
   function SheetSignalingChannel() {
     var _this;
     _classCallCheck$1(this, SheetSignalingChannel);
-    _this = _callSuper(this, SheetSignalingChannel);
+    _this = _callSuper$1(this, SheetSignalingChannel);
     _this._connected = false;
     _this._id = Math.random().toString(36).substr(2, 9);
     _this._pollInterval = null;
-    _this._signalName = null;
+
+    /**
+     * The signaling state of the channel.
+     * @type {string<'disconnected'|'connected'|'offering'|'answering'>}
+     */
+    _this.signalingState = 'disconnected';
+
+    /**
+     * The name of the signaling session.
+     * @type {string}
+     */
+    _this.signalName = null;
+
+    /**
+     * The timeout for polling messages.
+     * @type {number} - The timeout ID.
+     */
+    _this.pollingTimeout = null;
+
+    /**
+     * The duration of the offering timeout.
+     * @type {number} - The duration in milliseconds.
+     * @default 60000
+     */
+    _this.offeringTimeoutDuration = 60000;
+
+    /**
+     * The duration of the answering timeout.
+     * @type {number} - The duration in milliseconds.
+     * @default 60000
+     */
+    _this.answeringTimeoutDuration = 60000;
 
     // Replace with your Google Apps Script web app URL
     _this._serverUrl = 'https://script.google.com/macros/s/AKfycbx3RFGGAckbU-okJ2Cvnse7KmexGVUO8qcWvlevJczsx0wpl_a-Kxe_fi7ul0z4zISG/exec';
@@ -1770,34 +1801,60 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
     key: "connect",
     value: function connect(signalName) {
       if (this._connected) return;
-      this._signalName = signalName;
+      this.signalName = signalName;
+      this.signalingState = 'connected';
       this._connected = true;
-      this.startPolling();
       this.dispatchEvent(new Event('connected'));
     }
   }, {
     key: "disconnect",
     value: function disconnect() {
       if (!this._connected) return;
+      this.signalingState = 'disconnected';
       this._connected = false;
       this.stopPolling();
       this.dispatchEvent(new Event('disconnected'));
     }
+
+    /**
+     * Start polling for messages.
+     * @param {number} [duration] - The duration to poll for [ms].
+     * @returns {void}
+     */
   }, {
     key: "startPolling",
-    value: function startPolling() {
+    value: function startPolling(duration) {
       var _this2 = this;
+      if (duration) {
+        if (this.pollingTimeout) {
+          clearTimeout(this.pollingTimeout);
+        }
+        this.pollingTimeout = setTimeout(function () {
+          _this2.stopPolling();
+        }, duration);
+      }
       if (this._pollInterval) return;
       this._pollInterval = setInterval(function () {
         return _this2.pollMessages();
       }, 1000);
+      log$1.debug('Polling started');
     }
+
+    /**
+     * Stop polling for messages.
+     * @returns {void}
+     */
   }, {
     key: "stopPolling",
     value: function stopPolling() {
+      if (this.pollingTimeout) {
+        clearTimeout(this.pollingTimeout);
+        this.pollingTimeout = null;
+      }
       if (this._pollInterval) {
         clearInterval(this._pollInterval);
         this._pollInterval = null;
+        log$1.debug('Polling stopped');
       }
     }
   }, {
@@ -1822,7 +1879,7 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  signalName: this._signalName,
+                  signalName: this.signalName,
                   fromId: this._id,
                   message: message
                 })
@@ -1850,7 +1907,7 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
     key: "pollMessages",
     value: function () {
       var _pollMessages = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
-        var url, response, messages, _iterator, _step, msg;
+        var url, response, messages, _iterator, _step, msg, messageData;
         return _regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
@@ -1861,7 +1918,7 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
               return _context2.abrupt("return");
             case 2:
               _context2.prev = 2;
-              url = "".concat(this._serverUrl, "?signalName=").concat(encodeURIComponent(this._signalName)) + "&recipientId=".concat(encodeURIComponent(this._id));
+              url = "".concat(this._serverUrl, "?signalName=").concat(encodeURIComponent(this.signalName)) + "&recipientId=".concat(encodeURIComponent(this._id));
               _context2.next = 6;
               return fetch(url, {
                 method: 'GET',
@@ -1879,14 +1936,16 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
               return response.json();
             case 11:
               messages = _context2.sent;
-              _iterator = _createForOfIteratorHelper(messages);
+              _iterator = _createForOfIteratorHelper$1(messages);
               try {
                 for (_iterator.s(); !(_step = _iterator.n()).done;) {
                   msg = _step.value;
+                  // Parse the message content if needed
+                  messageData = msg.message;
                   this.dispatchEvent(new MessageEvent('message', {
-                    data: msg.message
+                    data: messageData
                   }));
-                  log$1.debug('Message received:', msg.message);
+                  log$1.debug('Message received:', messageData);
                 }
               } catch (err) {
                 _iterator.e(err);
@@ -1910,6 +1969,430 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
       }
       return pollMessages;
     }()
+    /**
+     * Start offering a signaling session.
+     * @param {object} offer - The offer to send.
+     * @returns {Promise} - A promise that resolves when the offer is sent.
+     */
+  }, {
+    key: "startOffering",
+    value: (function () {
+      var _startOffering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3(offer) {
+        return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              if (!(this.signalingState !== 'connected')) {
+                _context3.next = 2;
+                break;
+              }
+              return _context3.abrupt("return");
+            case 2:
+              this.signalingState = 'offering';
+              _context3.next = 5;
+              return this.send(offer);
+            case 5:
+              this.startPolling(this.offeringTimeoutDuration);
+              log$1.log("Offering signal ".concat(this.signalName, " from ").concat(this._id));
+            case 7:
+            case "end":
+              return _context3.stop();
+          }
+        }, _callee3, this);
+      }));
+      function startOffering(_x2) {
+        return _startOffering.apply(this, arguments);
+      }
+      return startOffering;
+    }())
+  }, {
+    key: "stopOffering",
+    value: function stopOffering() {
+      if (this.signalingState !== 'offering') return;
+      this.stopPolling();
+      log$1.log("Stopped offering signal \"".concat(this.signalName, "\" from ").concat(this._id));
+      this.signalingState = 'connected';
+    }
+  }, {
+    key: "startAnswering",
+    value: function startAnswering() {
+      if (this.signalingState !== 'connected') return;
+      this.signalingState = 'answering';
+      this.startPolling(this.answeringTimeoutDuration);
+    }
+  }, {
+    key: "stopAnswering",
+    value: function stopAnswering() {
+      if (this.signalingState !== 'answering') return;
+      this.stopPolling();
+      this.signalingState = 'connected';
+    }
+  }, {
+    key: "stopNegotiation",
+    value: function stopNegotiation() {
+      if (this.signalingState === 'offering') {
+        this.stopOffering();
+      } else if (this.signalingState === 'answering') {
+        this.stopAnswering();
+      }
+    }
+  }]);
+}(/*#__PURE__*/_wrapNativeSuper(EventTarget));
+
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _callSuper(t, o, e) { return o = _getPrototypeOf(o), _possibleConstructorReturn(t, _isNativeReflectConstruct() ? Reflect.construct(o, [], _getPrototypeOf(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+
+/**
+ * Class handling the peer connection and data channel logic.
+ */
+var SharingPeer = /*#__PURE__*/function (_EventTarget) {
+  /**
+   * Constructs a new PeerConnection instance.
+   * @param {SignalingChannel} signalingChannel - The signaling channel to use.
+   */
+  function SharingPeer(signalingChannel) {
+    var _this;
+    _classCallCheck$1(this, SharingPeer);
+    _this = _callSuper(this, SharingPeer);
+    _this.signalingChannel = signalingChannel;
+    _this.peerConnection = null;
+
+    /**
+     * The data channel for sending and receiving messages.
+     * @type {RTCDataChannel}
+     */
+    _this.dataChannel = null;
+    _this.dataChannelName = 'xcxP2P';
+    _this.dataChannelValues = {};
+    _this.lastDataChannelEvent = null;
+
+    // Initialize ICE candidate queue
+    _this._remoteCandidatesQueue = [];
+    _this.signalingChannel.addEventListener('message', _this.handleSignalingMessage.bind(_this));
+    _this.initializePeerConnection();
+    return _this;
+  }
+  _inherits(SharingPeer, _EventTarget);
+  return _createClass$1(SharingPeer, [{
+    key: "initializePeerConnection",
+    value: function initializePeerConnection(isInitiator) {
+      var _this2 = this;
+      this.peerConnection = new RTCPeerConnection({
+        iceServers: [{
+          urls: 'stun:stun.l.google.com:19302'
+        }]
+      });
+      this.peerConnection.onicecandidate = function (_ref) {
+        var candidate = _ref.candidate;
+        if (candidate) {
+          _this2.signalingChannel.send({
+            type: 'candidate',
+            candidate: candidate
+          }).catch(function (err) {
+            return log$1.warn('Error sending ICE candidate:', err);
+          });
+        }
+      };
+      this.peerConnection.onconnectionstatechange = function () {
+        log$1.log("Connection state: ".concat(_this2.peerConnection.connectionState));
+        if (_this2.peerConnection.connectionState === 'connected') {
+          _this2.signalingChannel.disconnect();
+        }
+      };
+      this.peerConnection.ondatachannel = function (event) {
+        var dataChannel = event.channel;
+        _this2.setupDataChannel(dataChannel);
+      };
+      if (isInitiator) {
+        var dataChannel = this.peerConnection.createDataChannel(this.dataChannelName);
+        this.setupDataChannel(dataChannel);
+      }
+    }
+
+    /**
+     * Handle signaling messages received from the signaling channel.
+     * @param {MessageEvent} event - The signaling message event.
+     */
+  }, {
+    key: "handleSignalingMessage",
+    value: (function () {
+      var _handleSignalingMessage = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(event) {
+        var message, remoteDesc, answer, _remoteDesc, candidate;
+        return _regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              message = event.data;
+              _context.prev = 1;
+              if (!(message.type === 'offer')) {
+                _context.next = 18;
+                break;
+              }
+              // Create RTCSessionDescription from the received message
+              remoteDesc = new RTCSessionDescription(message);
+              _context.next = 6;
+              return this.peerConnection.setRemoteDescription(remoteDesc);
+            case 6:
+              _context.next = 8;
+              return this._processQueuedRemoteCandidates();
+            case 8:
+              _context.next = 10;
+              return this.peerConnection.createAnswer();
+            case 10:
+              answer = _context.sent;
+              _context.next = 13;
+              return this.peerConnection.setLocalDescription(answer);
+            case 13:
+              _context.next = 15;
+              return this.signalingChannel.send(answer);
+            case 15:
+              log$1.log('Remote description set and answer sent:', message);
+              _context.next = 37;
+              break;
+            case 18:
+              if (!(message.type === 'answer')) {
+                _context.next = 27;
+                break;
+              }
+              _remoteDesc = new RTCSessionDescription(message);
+              _context.next = 22;
+              return this.peerConnection.setRemoteDescription(_remoteDesc);
+            case 22:
+              _context.next = 24;
+              return this._processQueuedRemoteCandidates();
+            case 24:
+              log$1.log('Remote description set:', message);
+              _context.next = 37;
+              break;
+            case 27:
+              if (!(message.type === 'candidate')) {
+                _context.next = 37;
+                break;
+              }
+              candidate = new RTCIceCandidate(message.candidate);
+              if (!(this.peerConnection.remoteDescription && this.peerConnection.remoteDescription.type)) {
+                _context.next = 35;
+                break;
+              }
+              _context.next = 32;
+              return this.peerConnection.addIceCandidate(candidate);
+            case 32:
+              log$1.log('ICE candidate added:', candidate);
+              _context.next = 37;
+              break;
+            case 35:
+              // Remote description not set yet, queue the candidate
+              this._remoteCandidatesQueue.push(candidate);
+              log$1.log('ICE candidate queued:', candidate);
+            case 37:
+              _context.next = 42;
+              break;
+            case 39:
+              _context.prev = 39;
+              _context.t0 = _context["catch"](1);
+              log$1.warn('Error processing signaling message:', _context.t0);
+            case 42:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this, [[1, 39]]);
+      }));
+      function handleSignalingMessage(_x) {
+        return _handleSignalingMessage.apply(this, arguments);
+      }
+      return handleSignalingMessage;
+    }())
+  }, {
+    key: "_processQueuedRemoteCandidates",
+    value: function () {
+      var _processQueuedRemoteCandidates2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
+        var _iterator, _step, candidate;
+        return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              _iterator = _createForOfIteratorHelper(this._remoteCandidatesQueue);
+              _context2.prev = 1;
+              _iterator.s();
+            case 3:
+              if ((_step = _iterator.n()).done) {
+                _context2.next = 16;
+                break;
+              }
+              candidate = _step.value;
+              _context2.prev = 5;
+              _context2.next = 8;
+              return this.peerConnection.addIceCandidate(candidate);
+            case 8:
+              log$1.log('Queued ICE candidate added:', candidate);
+              _context2.next = 14;
+              break;
+            case 11:
+              _context2.prev = 11;
+              _context2.t0 = _context2["catch"](5);
+              log$1.warn('Error adding queued ICE candidate:', _context2.t0);
+            case 14:
+              _context2.next = 3;
+              break;
+            case 16:
+              _context2.next = 21;
+              break;
+            case 18:
+              _context2.prev = 18;
+              _context2.t1 = _context2["catch"](1);
+              _iterator.e(_context2.t1);
+            case 21:
+              _context2.prev = 21;
+              _iterator.f();
+              return _context2.finish(21);
+            case 24:
+              this._remoteCandidatesQueue = [];
+            case 25:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this, [[1, 18, 21, 24], [5, 11]]);
+      }));
+      function _processQueuedRemoteCandidates() {
+        return _processQueuedRemoteCandidates2.apply(this, arguments);
+      }
+      return _processQueuedRemoteCandidates;
+    }()
+  }, {
+    key: "setupDataChannel",
+    value: function setupDataChannel(dataChannel) {
+      var _this3 = this;
+      this.dataChannel = dataChannel;
+      dataChannel.onopen = function () {
+        _this3.dispatchEvent(new CustomEvent('dataChannelStateChanged', {
+          detail: _this3.dataChannel.readyState
+        }));
+        log$1.log("Data channel opened: ".concat(_this3.dataChannelName));
+      };
+      dataChannel.onclose = function () {
+        _this3.dispatchEvent(new CustomEvent('dataChannelStateChanged', {
+          detail: _this3.dataChannel ? _this3.dataChannel.readyState : 'closed'
+        }));
+        log$1.log('Data channel closed');
+      };
+      dataChannel.onmessage = function (event) {
+        log$1.log('Received:', event.data);
+        var message = JSON.parse(event.data);
+        switch (message.type) {
+          case 'SET_VALUE':
+            _this3.dataChannelValues[message.content.key] = message.content.value;
+            break;
+          case 'EVENT':
+            // Dispatch an event instead of calling onEvent
+            _this3.lastDataChannelEvent = message.content;
+            _this3.dispatchEvent(new CustomEvent('sharedEvent', {
+              detail: message.content
+            }));
+            break;
+          default:
+            log$1.warn('Unknown message type:', message.type);
+        }
+      };
+    }
+
+    /**
+     * Whether the peer is connected.
+     * @returns {boolean} True if the peer is connected.
+     */
+  }, {
+    key: "isConnected",
+    value: function isConnected() {
+      return this.peerConnection && this.peerConnection.connectionState === 'connected';
+    }
+  }, {
+    key: "disconnectPeer",
+    value: function disconnectPeer() {
+      if (this.dataChannel) {
+        this.dataChannel.close();
+        log$1.log('Data channel closed');
+        this.dataChannel = null;
+      }
+      if (this.peerConnection) {
+        this.peerConnection.close();
+        log$1.log('Peer connection closed');
+        this.peerConnection = null;
+      }
+    }
+
+    /**
+     * State of the data channel.
+     * @returns {string<'connecting'|'open'|'closing'|'closed'|'n/a'>} The state of the data channel.
+     */
+  }, {
+    key: "dataChannelState",
+    value: function dataChannelState() {
+      return this.dataChannel ? this.dataChannel.readyState : 'n/a';
+    }
+  }, {
+    key: "valueOf",
+    value: function valueOf(key) {
+      return this.dataChannelValues[key] ? this.dataChannelValues[key] : '';
+    }
+  }, {
+    key: "setValue",
+    value: function setValue(key, value) {
+      this.dataChannelValues[key] = value;
+      if (!this.dataChannel) {
+        return Promise.resolve("local ".concat(key, " = ").concat(value));
+      }
+      try {
+        var message = {
+          type: 'SET_VALUE',
+          content: {
+            key: key,
+            value: value
+          }
+        };
+        this.dataChannel.send(JSON.stringify(message));
+        log$1.debug("send SET_VALUE: ".concat(key, " = ").concat(value));
+      } catch (error) {
+        return Promise.resolve(error.message);
+      }
+      return Promise.resolve("send ".concat(key, " = ").concat(value));
+    }
+  }, {
+    key: "sendEvent",
+    value: function sendEvent(type, data) {
+      this.dispatchEvent(new CustomEvent('sharedEvent', {
+        detail: {
+          type: type,
+          data: data
+        }
+      }));
+      if (!this.dataChannel) {
+        return Promise.resolve("local event: ".concat(type, " data: ").concat(data));
+      }
+      try {
+        var message = {
+          type: 'EVENT',
+          content: {
+            type: type,
+            data: data
+          }
+        };
+        this.dataChannel.send(JSON.stringify(message));
+      } catch (error) {
+        return Promise.resolve(error.message);
+      }
+      return Promise.resolve("send event: ".concat(type, " data: ").concat(data));
+    }
+  }, {
+    key: "lastEventType",
+    value: function lastEventType() {
+      var event = this.lastDataChannelEvent;
+      return event ? event.type : '';
+    }
+  }, {
+    key: "lastEventData",
+    value: function lastEventData() {
+      var event = this.lastDataChannelEvent;
+      return event ? event.data : '';
+    }
   }]);
 }(/*#__PURE__*/_wrapNativeSuper(EventTarget));
 
@@ -1961,161 +2444,200 @@ var ExtensionBlocks = /*#__PURE__*/function () {
       // Replace 'formatMessage' to a formatter which is used in the runtime.
       formatMessage = runtime.formatMessage;
     }
+
+    /**
+     * The signaling channel.
+     * @type {SignalingChannel}
+     */
     this.signalingChannel = new SheetSignalingChannel();
-    this.signalingChannel.addEventListener('message', /*#__PURE__*/function () {
-      var _ref = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(event) {
-        var message, answer;
+
+    /**
+     * The peer connection manager.
+     * @type {SharingPeer}
+     */
+    this.peer = new SharingPeer(this.signalingChannel);
+    this.peer.addEventListener('dataChannelStateChanged', function (event) {
+      if (event.detail === 'open') {
+        _this.signalingChannel.stopNegotiation();
+        // this.runtime.startHats('xcxP2P_whenConnected');
+      }
+      if (event.detail === 'closed') ;
+    });
+    // Add event listener for shared events
+    this.peer.addEventListener('sharedEvent', function (event) {
+      return _this.onSharedEvent(event.detail);
+    });
+  }
+
+  /**
+   * The signaling state.
+   * @type {string<'disconnected'|'connected'|'offering'|'answering'>}
+   * @readonly
+   * @returns {string} - the signaling state.
+   */
+  return _createClass$1(ExtensionBlocks, [{
+    key: "signalingState",
+    get: function get() {
+      return this.signalingChannel.signalingState;
+    }
+  }, {
+    key: "makeSignal",
+    value: function () {
+      var _makeSignal = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(args) {
+        var signalName, offer;
         return _regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
-              message = event.data;
-              _context.prev = 1;
-              if (!(message.type === 'offer')) {
-                _context.next = 15;
+              signalName = String(args.SIGNAL_NAME).trim();
+              if (!(this.signalingChannel.signalName === signalName && this.signalingState === 'offering')) {
+                _context.next = 3;
                 break;
               }
-              _context.next = 5;
-              return _this.peerConnection.setRemoteDescription(message);
-            case 5:
+              return _context.abrupt("return", Promise.resolve('Already offering'));
+            case 3:
+              this.peer.disconnectPeer();
+              this.peer.initializePeerConnection(true);
               _context.next = 7;
-              return _this.peerConnection.createAnswer();
+              return this.peer.peerConnection.createOffer();
             case 7:
-              answer = _context.sent;
+              offer = _context.sent;
               _context.next = 10;
-              return _this.peerConnection.setLocalDescription(answer);
+              return this.peer.peerConnection.setLocalDescription(offer);
             case 10:
               _context.next = 12;
-              return _this.signalingChannel.send(answer);
+              return this.signalingChannel.connect(signalName);
             case 12:
-              log$1.log('Remote description set and answer sent:', message);
-              _context.next = 25;
-              break;
+              _context.next = 14;
+              return this.signalingChannel.startOffering(offer);
+            case 14:
+              return _context.abrupt("return", "Offering signal ".concat(signalName));
             case 15:
-              if (!(message.type === 'answer')) {
-                _context.next = 21;
-                break;
-              }
-              _context.next = 18;
-              return _this.peerConnection.setRemoteDescription(message);
-            case 18:
-              log$1.log('Remote description set:', message);
-              _context.next = 25;
-              break;
-            case 21:
-              if (!(message.type === 'candidate')) {
-                _context.next = 25;
-                break;
-              }
-              _context.next = 24;
-              return _this.peerConnection.addIceCandidate(message.candidate);
-            case 24:
-              log$1.log('ICE candidate added:', message.candidate);
-            case 25:
-              _context.next = 30;
-              break;
-            case 27:
-              _context.prev = 27;
-              _context.t0 = _context["catch"](1);
-              log$1.warn('Error processing signaling message:', _context.t0);
-            case 30:
             case "end":
               return _context.stop();
           }
-        }, _callee, null, [[1, 27]]);
+        }, _callee, this);
       }));
-      return function (_x) {
-        return _ref.apply(this, arguments);
-      };
-    }());
-
-    /**
-     * Channel name for the data channel.
-     */
-    this.dataChannelName = 'xcxP2P';
-
-    /**
-     * Local value holder when the channel is not connected.
-     * @type {object<string, string>}
-     */
-    this.dataChannelValues = {};
-
-    /**
-     * Local event holder when the channel is not connected.
-     * @type {object}
-     */
-    this.lastDataChannelEvent = null;
-    this.initializePeerConnection();
-  }
-  return _createClass$1(ExtensionBlocks, [{
-    key: "initializePeerConnection",
-    value: function initializePeerConnection(isInitiator) {
-      var _this2 = this;
-      this.peerConnection = new RTCPeerConnection({
-        iceServers: [{
-          urls: 'stun:stun.l.google.com:19302'
-        }]
-      });
-
-      // Setup peer connection event handlers
-      this.peerConnection.onicecandidate = function (_ref2) {
-        var candidate = _ref2.candidate;
-        if (candidate) {
-          _this2.signalingChannel.send({
-            type: 'candidate',
-            candidate: candidate
-          }).catch(function (err) {
-            return log$1.warn('Error sending ICE candidate:', err);
-          });
-        } else {
-          log$1.log('ICE candidate gathering complete');
-          _this2.signalingChannel.send(_this2.peerConnection.localDescription);
-        }
-      };
-      this.peerConnection.onconnectionstatechange = function () {
-        log$1.log("Connection state: ".concat(_this2.peerConnection.connectionState));
-        if (_this2.peerConnection.connectionState === 'connected') {
-          _this2.signalingChannel.disconnect();
-        }
-      };
-      this.peerConnection.ondatachannel = function (event) {
-        var dataChannel = event.channel;
-        _this2.setupDataChannel(dataChannel);
-      };
-      if (isInitiator) {
-        var dataChannel = this.peerConnection.createDataChannel(this.dataChannelName);
-        this.setupDataChannel(dataChannel);
+      function makeSignal(_x) {
+        return _makeSignal.apply(this, arguments);
       }
+      return makeSignal;
+    }()
+  }, {
+    key: "connectSignal",
+    value: function () {
+      var _connectSignal = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2(args) {
+        var signalName;
+        return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              signalName = String(args.SIGNAL_NAME).trim();
+              if (!(this.signalingChannel.signalName === signalName && this.signalingState === 'answering')) {
+                _context2.next = 3;
+                break;
+              }
+              return _context2.abrupt("return", Promise.resolve('Already answering'));
+            case 3:
+              this.peer.disconnectPeer();
+              this.peer.initializePeerConnection(false);
+              _context2.next = 7;
+              return this.signalingChannel.connect(signalName);
+            case 7:
+              this.signalingChannel.startAnswering();
+              return _context2.abrupt("return", "Answering signal ".concat(signalName));
+            case 9:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this);
+      }));
+      function connectSignal(_x2) {
+        return _connectSignal.apply(this, arguments);
+      }
+      return connectSignal;
+    }()
+  }, {
+    key: "isConnected",
+    value: function isConnected() {
+      return this.peer.isConnected();
+    }
+  }, {
+    key: "disconnectPeer",
+    value: function disconnectPeer() {
+      this.peer.disconnectPeer();
     }
 
     /**
-     * Setup the data channel.
-     * @param {RTCDataChannel} dataChannel - the data channel
+     * Return the value of the key.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.KEY - the key.
+     * @return {string} - the value of the key.
      */
   }, {
-    key: "setupDataChannel",
-    value: function setupDataChannel(dataChannel) {
-      var _this3 = this;
-      this.dataChannel = dataChannel;
-      dataChannel.onopen = function () {
-        log$1.log('Data channel opened');
-      };
-      dataChannel.onclose = function () {
-        log$1.log('Data channel closed');
-      };
-      dataChannel.onmessage = function (event) {
-        log$1.log('Received:', event.data);
-        var message = JSON.parse(event.data);
-        switch (message.type) {
-          case 'SET_VALUE':
-            _this3.dataChannelValues[message.content.key] = message.content.value;
-            break;
-          case 'EVENT':
-            _this3.onEvent(message.content);
-            break;
-          default:
-            log$1.warn('Unknown message type:', message.type);
-        }
-      };
+    key: "valueOf",
+    value: function valueOf(args) {
+      var key = String(args.KEY).trim();
+      return this.peer.valueOf(key);
+    }
+
+    /**
+     * Set the value of the key.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.KEY - the key.
+     * @param {string} args.VALUE - the value.
+     * @return {string} - the result of setting the value.
+     */
+  }, {
+    key: "setValue",
+    value: function setValue(args) {
+      var key = String(args.KEY).trim();
+      var value = Cast$1.toString(args.VALUE);
+      return this.peer.setValue(key, value);
+    }
+
+    /**
+     * Return the last event type.
+     * @return {string} - the last event type.
+     */
+  }, {
+    key: "lastEventType",
+    value: function lastEventType() {
+      return this.peer.lastEventType();
+    }
+
+    /**
+     * Return the last event data.
+     * @return {string} - the last event data.
+     */
+  }, {
+    key: "lastEventData",
+    value: function lastEventData() {
+      return this.peer.lastEventData();
+    }
+
+    /**
+     * Send the event.
+     * @param {object} args - arguments for the block.
+     * @param {string} args.TYPE - the event type.
+     * @param {string} args.DATA - the event data.
+     * @return {Promise<string>} - resolve with the result of sending the event.
+     */
+  }, {
+    key: "sendEvent",
+    value: function sendEvent(args) {
+      var type = String(args.TYPE).trim();
+      var data = Cast$1.toString(args.DATA);
+      return this.peer.sendEvent(type, data);
+    }
+
+    /**
+     * Handle the shared event.
+     * @param {object} event - The event data.
+     */
+  }, {
+    key: "onSharedEvent",
+    value: function onSharedEvent(event) {
+      this.peer.lastDataChannelEvent = event;
+      this.runtime.startHats('xcxP2P_whenEventReceived');
     }
 
     /**
@@ -2161,6 +2683,14 @@ var ExtensionBlocks = /*#__PURE__*/function () {
             }
           },
           func: 'connectSignal'
+        }, {
+          opcode: 'isConnected',
+          blockType: BlockType$1.BOOLEAN,
+          text: formatMessage({
+            id: 'xcxP2P.isConnected',
+            default: 'connected'
+          }),
+          func: 'isConnected'
         }, {
           opcode: 'disconnectPeer',
           blockType: BlockType$1.COMMAND,
@@ -2266,193 +2796,6 @@ var ExtensionBlocks = /*#__PURE__*/function () {
         }],
         menus: {}
       };
-    }
-  }, {
-    key: "makeSignal",
-    value: function () {
-      var _makeSignal = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2(args) {
-        var signalName, offer;
-        return _regeneratorRuntime.wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              signalName = String(args.SIGNAL_NAME).trim();
-              this.initializePeerConnection(true);
-              _context2.next = 4;
-              return this.signalingChannel.connect(signalName);
-            case 4:
-              _context2.next = 6;
-              return this.peerConnection.createOffer();
-            case 6:
-              offer = _context2.sent;
-              _context2.next = 9;
-              return this.peerConnection.setLocalDescription(offer);
-            case 9:
-              _context2.next = 11;
-              return this.signalingChannel.send(offer);
-            case 11:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2, this);
-      }));
-      function makeSignal(_x2) {
-        return _makeSignal.apply(this, arguments);
-      }
-      return makeSignal;
-    }()
-  }, {
-    key: "connectSignal",
-    value: function () {
-      var _connectSignal = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3(args) {
-        var signalName;
-        return _regeneratorRuntime.wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
-            case 0:
-              signalName = String(args.SIGNAL_NAME).trim();
-              this.initializePeerConnection(false);
-              _context3.next = 4;
-              return this.signalingChannel.connect(signalName);
-            case 4:
-            case "end":
-              return _context3.stop();
-          }
-        }, _callee3, this);
-      }));
-      function connectSignal(_x3) {
-        return _connectSignal.apply(this, arguments);
-      }
-      return connectSignal;
-    }()
-  }, {
-    key: "disconnectPeer",
-    value: function disconnectPeer() {
-      if (this.dataChannel) {
-        this.dataChannel.close();
-        log$1.log('Data channel closed');
-        this.dataChannel = null;
-      }
-      if (this.peerConnection) {
-        this.peerConnection.close();
-        log$1.log('Peer connection closed');
-        this.peerConnection = null;
-
-        // Re-initialize peer connection for next use
-        this.initializePeerConnection();
-      }
-    }
-
-    /**
-     * Return the value of the key.
-     * @param {object} args - arguments for the block.
-     * @param {string} args.KEY - the key.
-     * @return {string} - the value of the key.
-     */
-  }, {
-    key: "valueOf",
-    value: function valueOf(args) {
-      var key = String(args.KEY).trim();
-      return this.dataChannelValues[key] ? this.dataChannelValues[key] : '';
-    }
-
-    /**
-     * Set the value of the key.
-     * @param {object} args - arguments for the block.
-     * @param {string} args.KEY - the key.
-     * @param {string} args.VALUE - the value.
-     * @return {string} - the result of setting the value.
-     */
-  }, {
-    key: "setValue",
-    value: function setValue(args) {
-      var key = String(args.KEY).trim();
-      var value = Cast$1.toString(args.VALUE);
-      this.dataChannelValues[key] = value;
-      if (!this.dataChannel) {
-        return Promise.resolve("local ".concat(key, " = ").concat(value));
-      }
-      try {
-        var message = {
-          type: 'SET_VALUE',
-          content: {
-            key: key,
-            value: value
-          }
-        };
-        this.dataChannel.send(JSON.stringify(message));
-        log$1.debug("send SET_VALUE: ".concat(key, " = ").concat(value));
-      } catch (error) {
-        return Promise.resolve(error.message);
-      }
-      // resolve after a delay to process another message when this block is used in a loop.
-      return Promise.resolve("send ".concat(key, " = ").concat(value));
-    }
-
-    /**
-     * Handle the event.
-     * @param {object} event - the event.
-     */
-  }, {
-    key: "onEvent",
-    value: function onEvent(event) {
-      this.lastDataChannelEvent = event;
-      this.runtime.startHats('xcxP2P_whenEventReceived');
-    }
-
-    /**
-     * Return the last event type.
-     * @return {string} - the last event type.
-     */
-  }, {
-    key: "lastEventType",
-    value: function lastEventType() {
-      var event = this.lastDataChannelEvent;
-      return event ? event.type : '';
-    }
-
-    /**
-     * Return the last event data.
-     * @return {string} - the last event data.
-     */
-  }, {
-    key: "lastEventData",
-    value: function lastEventData() {
-      var event = this.lastDataChannelEvent;
-      return event ? event.data : '';
-    }
-
-    /**
-     * Send the event.
-     * @param {object} args - arguments for the block.
-     * @param {string} args.TYPE - the event type.
-     * @param {string} args.DATA - the event data.
-     * @return {Promise<string>} - resolve with the result of sending the event.
-     */
-  }, {
-    key: "sendEvent",
-    value: function sendEvent(args) {
-      var type = String(args.TYPE).trim();
-      var data = Cast$1.toString(args.DATA);
-      this.onEvent({
-        type: type,
-        data: data
-      });
-      if (!this.dataChannel) {
-        return Promise.resolve("local event: ".concat(type, " data: ").concat(data));
-      }
-      try {
-        var message = {
-          type: 'EVENT',
-          content: {
-            type: type,
-            data: data
-          }
-        };
-        this.dataChannel.send(JSON.stringify(message));
-      } catch (error) {
-        return Promise.resolve(error.message);
-      }
-      // resolve after a delay for the event to be sent.
-      return Promise.resolve("send event: ".concat(type, " data: ").concat(data));
     }
   }], [{
     key: "formatMessage",

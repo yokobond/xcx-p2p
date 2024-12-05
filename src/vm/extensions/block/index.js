@@ -163,6 +163,9 @@ class ExtensionBlocks {
         return `Answering signal ${signalName}`;
     }
 
+    isConnected () {
+        return this.peer.isConnected();
+    }
 
     disconnectPeer () {
         this.peer.disconnectPeer();
@@ -273,6 +276,15 @@ class ExtensionBlocks {
                         }
                     },
                     func: 'connectSignal'
+                },
+                {
+                    opcode: 'isConnected',
+                    blockType: BlockType.BOOLEAN,
+                    text: formatMessage({
+                        id: 'xcxP2P.isConnected',
+                        default: 'connected'
+                    }),
+                    func: 'isConnected'
                 },
                 {
                     opcode: 'disconnectPeer',
