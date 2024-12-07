@@ -101,65 +101,46 @@ class ExtensionBlocks {
         }
 
         /**
-         * The signaling channel.
-         * @type {SignalingChannel}
-         */
-        this.signalingChannel = new SignalingChannel();
-
-        /**
          * The peer connection manager.
          * @type {SharingPeer}
          */
-        this.peer = new SharingPeer(this.signalingChannel);
+        this.peer = new SharingPeer(new SignalingChannel());
 
         this.peer.addEventListener('dataChannelStateChanged', event => {
             if (event.detail === 'open') {
-                this.signalingChannel.stopNegotiation();
+                this.peer.stopNegotiation();
                 // this.runtime.startHats('xcxP2P_whenConnected');
             }
             if (event.detail === 'closed') {
                 // this.runtime.startHats('xcxP2P_whenDisconnected');
             }
         });
-        // Add event listener for shared events
         this.peer.addEventListener('sharedEvent', event => this.onSharedEvent(event.detail));
-    }
-
-    /**
-     * The signaling state.
-     * @type {string<'disconnected'|'connected'|'offering'|'answering'>}
-     * @readonly
-     * @returns {string} - the signaling state.
-     */
-    get signalingState () {
-        return this.signalingChannel.signalingState;
     }
 
     async makeSignal (args) {
         const signalName = String(args.SIGNAL_NAME).trim();
-        if (this.signalingChannel.signalName === signalName &&
-            this.signalingState === 'offering') {
+        if (this.peer.signalName === signalName &&
+            this.peer.signalingState === 'offering') {
             return Promise.resolve('Already offering');
         }
         this.peer.disconnectPeer();
         this.peer.initializePeerConnection(true);
-        const offer = await this.peer.peerConnection.createOffer();
-        await this.peer.peerConnection.setLocalDescription(offer);
-        await this.signalingChannel.connect(signalName);
-        await this.signalingChannel.startOffering(offer);
+        await this.peer.connect(signalName);
+        await this.peer.startOffering();
         return `Offering signal ${signalName}`;
     }
 
     async connectSignal (args) {
         const signalName = String(args.SIGNAL_NAME).trim();
-        if (this.signalingChannel.signalName === signalName &&
-            this.signalingState === 'answering') {
+        if (this.peer.signalName === signalName &&
+            this.peer.signalingState === 'answering') {
             return Promise.resolve('Already answering');
         }
         this.peer.disconnectPeer();
         this.peer.initializePeerConnection(false);
-        await this.signalingChannel.connect(signalName);
-        this.signalingChannel.startAnswering();
+        await this.peer.connect(signalName);
+        await this.peer.startAnswering();
         return `Answering signal ${signalName}`;
     }
 

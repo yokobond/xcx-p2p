@@ -23,17 +23,24 @@ function doGet(e) {
     const sheet = ss.getSheetByName('SignalingMessages');
     const data = sheet.getDataRange().getValues();
     const messages = [];
+    let answerSent = false;
 
     for (let i = data.length - 1; i >= 1; i--) { // Skip header row
         const row = data[i];
         const [rowSignalName, rowFromId, rowMessage, rowTimestamp] = row;
-        if (rowSignalName === signalName && rowFromId !== recipientId) {
-            messages.push({
-                from: rowFromId,
-                message: JSON.parse(rowMessage),
-                timestamp: rowTimestamp
-            });
-            sheet.deleteRow(i + 1); // Adjust for header row
+        if (rowSignalName === signalName) {
+            const messageContent = JSON.parse(rowMessage);
+            if (messageContent.type === 'answer') {
+                answerSent = true;
+            }
+            if (rowFromId !== recipientId && !answerSent) {
+                messages.push({
+                    from: rowFromId,
+                    message: messageContent,
+                    timestamp: rowTimestamp
+                });
+                sheet.deleteRow(i + 1); // Adjust for header row
+            }
         }
     }
 
@@ -58,6 +65,20 @@ function doPost(e) {
     const timestamp = new Date().toISOString();
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('SignalingMessages');
+    const messageContent = data.message;
+
+    // Check if an answer has already been sent
+    if (messageContent.type === 'answer') {
+        const existingData = sheet.getDataRange().getValues();
+        for (let i = existingData.length - 1; i >= 1; i--) {
+            const row = existingData[i];
+            const [rowSignalName, , , ] = row;
+            if (rowSignalName === signalName) {
+                sheet.deleteRow(i + 1); // Remove existing offers
+            }
+        }
+    }
+
     sheet.appendRow([signalName, fromId, message, timestamp]);
 
     return ContentService.createTextOutput(JSON.stringify({status: 'success'}))

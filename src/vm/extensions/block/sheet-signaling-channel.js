@@ -105,7 +105,6 @@ class SheetSignalingChannel extends EventTarget {
     async send (message) {
         if (!this._connected) throw new Error('Not connected');
         try {
-            // Stringify the message to ensure it's sent correctly
             await fetch(this._serverUrl, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -138,7 +137,6 @@ class SheetSignalingChannel extends EventTarget {
             }
             const messages = await response.json();
             for (const msg of messages) {
-                // Parse the message content if needed
                 const messageData = msg.message;
                 this.dispatchEvent(new MessageEvent('message', {
                     data: messageData

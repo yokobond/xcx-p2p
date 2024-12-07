@@ -11,6 +11,8 @@ class SharingPeer extends EventTarget {
     constructor (signalingChannel) {
         super();
         this.signalingChannel = signalingChannel;
+        this.signalingState = 'disconnected';
+        this.signalName = null;
 
         this.peerConnection = null;
 
@@ -24,12 +26,41 @@ class SharingPeer extends EventTarget {
         this.dataChannelValues = {};
         this.lastDataChannelEvent = null;
 
-        // Initialize ICE candidate queue
         this._remoteCandidatesQueue = [];
 
         this.signalingChannel.addEventListener('message', this.handleSignalingMessage.bind(this));
 
         this.initializePeerConnection();
+    }
+
+    async connect (signalName) {
+        if (this.signalingChannel.signalName === signalName &&
+            (this.signalingState === 'offering' || this.signalingState === 'answering')) {
+            return;
+        }
+        await this.signalingChannel.connect(signalName);
+        this.signalName = signalName;
+        this.signalingState = 'connected';
+    }
+
+    async startOffering () {
+        if (this.signalingState !== 'connected') {
+            throw new Error('Not connected');
+        }
+        this.signalingState = 'offering';
+        const offer = await this.peerConnection.createOffer();
+        await this.peerConnection.setLocalDescription(offer);
+        await this.signalingChannel.startOffering(offer);
+        // Remove duplicate event listener setup
+    }
+
+    startAnswering () {
+        if (this.signalingState !== 'connected') {
+            throw new Error('Not connected');
+        }
+        this.signalingState = 'answering';
+        this.signalingChannel.startAnswering();
+        // Remove duplicate event listener setup
     }
 
     initializePeerConnection (isInitiator) {
@@ -72,23 +103,30 @@ class SharingPeer extends EventTarget {
      */
     async handleSignalingMessage (event) {
         const message = event.data;
+        if (!message) return;
         try {
-            if (message.type === 'offer') {
-                // Create RTCSessionDescription from the received message
-                const remoteDesc = new RTCSessionDescription(message);
-                await this.peerConnection.setRemoteDescription(remoteDesc);
-                // Process any queued ICE candidates
+            if (message.type === 'offer' && this.signalingState === 'answering') {
+                if (this.peerConnection.signalingState !== 'stable') {
+                    log.warn('Cannot handle offer in signaling state:', this.peerConnection.signalingState);
+                    return;
+                }
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
                 await this._processQueuedRemoteCandidates();
                 const answer = await this.peerConnection.createAnswer();
                 await this.peerConnection.setLocalDescription(answer);
-                // Send the answer through the signaling channel
-                await this.signalingChannel.send(answer);
-                log.log('Remote description set and answer sent:', message);
-            } else if (message.type === 'answer') {
-                const remoteDesc = new RTCSessionDescription(message);
-                await this.peerConnection.setRemoteDescription(remoteDesc);
+                await this.signalingChannel.send({
+                    type: 'answer',
+                    sdp: answer.sdp
+                });
+                this.signalingChannel.stopAnswering();
+            } else if (message.type === 'answer' && this.signalingState === 'offering') {
+                if (this.peerConnection.signalingState !== 'have-local-offer') {
+                    log.warn('Cannot handle answer in signaling state:', this.peerConnection.signalingState);
+                    return;
+                }
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
                 await this._processQueuedRemoteCandidates();
-                log.log('Remote description set:', message);
+                this.signalingChannel.stopOffering();
             } else if (message.type === 'candidate') {
                 const candidate = new RTCIceCandidate(message.candidate);
                 if (this.peerConnection.remoteDescription && this.peerConnection.remoteDescription.type) {
@@ -140,7 +178,6 @@ class SharingPeer extends EventTarget {
                 this.dataChannelValues[message.content.key] = message.content.value;
                 break;
             case 'EVENT':
-                // Dispatch an event instead of calling onEvent
                 this.lastDataChannelEvent = message.content;
                 this.dispatchEvent(new CustomEvent('sharedEvent', {
                     detail: message.content
@@ -236,6 +273,14 @@ class SharingPeer extends EventTarget {
     lastEventData () {
         const event = this.lastDataChannelEvent;
         return event ? event.data : '';
+    }
+
+    stopNegotiation () {
+        if (this.signalingChannel) {
+            this.signalingChannel.stopNegotiation();
+            this.signalingState = 'connected';
+            log.log('Negotiation stopped');
+        }
     }
 }
 
