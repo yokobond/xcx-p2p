@@ -14,6 +14,20 @@ class SharingPeer extends EventTarget {
         this.signalingState = 'disconnected';
         this.signalName = null;
 
+        /**
+         * The duration of the offering timeout.
+         * @type {number} - The duration in milliseconds.
+         * @default 60000
+         */
+        this.offeringTimeoutDuration = 60000;
+
+        /**
+         * The duration of the answering timeout.
+         * @type {number} - The duration in milliseconds.
+         * @default 60000
+         */
+        this.answeringTimeoutDuration = 60000;
+
         this.peerConnection = null;
 
         /**
@@ -29,8 +43,6 @@ class SharingPeer extends EventTarget {
         this._remoteCandidatesQueue = [];
 
         this.signalingChannel.addEventListener('message', this.handleSignalingMessage.bind(this));
-
-        this.initializePeerConnection();
     }
 
     async connect (signalName) {
@@ -43,27 +55,75 @@ class SharingPeer extends EventTarget {
         this.signalingState = 'connected';
     }
 
-    async startOffering () {
-        if (this.signalingState !== 'connected') {
-            throw new Error('Not connected');
+    async stopNegotiation (success = false) {
+        if (typeof this.negotiationTimeoutId === 'number') {
+            clearTimeout(this.negotiationTimeoutId);
+            this.negotiationTimeoutId = null;
         }
-        this.signalingState = 'offering';
-        const offer = await this.peerConnection.createOffer();
-        await this.peerConnection.setLocalDescription(offer);
-        await this.signalingChannel.startOffering(offer);
-        // Remove duplicate event listener setup
+        await this.signalingChannel.stopNegotiation();
+        if (success) {
+            if (this.negotiationResolve) {
+                this.negotiationResolve();
+            }
+        } else if (this.negotiationReject) {
+            await this.signalingChannel.deleteOwnMessages();
+            this.negotiationReject(new Error('Negotiation rejected'));
+        }
+        this.negotiationResolve = null;
+        this.negotiationReject = null;
+        this.signalingState = 'connected';
+        log.log('Negotiation stopped');
     }
 
-    startAnswering () {
-        if (this.signalingState !== 'connected') {
-            throw new Error('Not connected');
-        }
+    async startOffering () {
+        await this.stopNegotiation();
+        this.signalingState = 'offering';
+        await this.initializePeerConnection(true);
+        
+        return new Promise((resolve, reject) => {
+            this.negotiationResolve = resolve;
+            this.negotiationReject = reject;
+            this.negotiationTimeoutId = setTimeout(async () => {
+                this.negotiationTimeoutId = null;
+                await this.signalingChannel.stopNegotiation();
+                await this.signalingChannel.deleteOwnMessages();
+                this.signalingState = 'connected';
+                reject(new Error('Offering timeout'));
+            }, this.offeringTimeoutDuration);
+
+            this.peerConnection.createOffer()
+                .then(async offer => {
+                    await this.peerConnection.setLocalDescription(offer);
+                    await this.signalingChannel.startOffering(offer);
+                    log.log(`Offering signal ${this.signalName}`);
+                })
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    }
+
+    async startAnswering () {
+        await this.stopNegotiation();
         this.signalingState = 'answering';
-        this.signalingChannel.startAnswering();
-        // Remove duplicate event listener setup
+        await this.initializePeerConnection(false);
+        return new Promise((resolve, reject) => {
+            this.negotiationResolve = resolve;
+            this.negotiationReject = reject;
+            this.negotiationTimeoutId = setTimeout(async () => {
+                this.negotiationTimeoutId = null;
+                await this.signalingChannel.stopNegotiation();
+                await this.signalingChannel.deleteOwnMessages();
+                this.signalingState = 'connected';
+                reject(new Error('Answering timeout'));
+            }, this.answeringTimeoutDuration);
+
+            this.signalingChannel.startAnswering();
+        });
     }
 
     initializePeerConnection (isInitiator) {
+        this.disconnectPeer();
         this.peerConnection = new RTCPeerConnection({
             iceServers: [
                 {urls: 'stun:stun.l.google.com:19302'}
@@ -82,6 +142,7 @@ class SharingPeer extends EventTarget {
         this.peerConnection.onconnectionstatechange = () => {
             log.log(`Connection state: ${this.peerConnection.connectionState}`);
             if (this.peerConnection.connectionState === 'connected') {
+                this.stopNegotiation(true);
                 this.signalingChannel.disconnect();
             }
         };
@@ -118,7 +179,6 @@ class SharingPeer extends EventTarget {
                     type: 'answer',
                     sdp: answer.sdp
                 });
-                this.signalingChannel.stopAnswering();
             } else if (message.type === 'answer' && this.signalingState === 'offering') {
                 if (this.peerConnection.signalingState !== 'have-local-offer') {
                     log.warn('Cannot handle answer in signaling state:', this.peerConnection.signalingState);
@@ -126,7 +186,6 @@ class SharingPeer extends EventTarget {
                 }
                 await this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
                 await this._processQueuedRemoteCandidates();
-                this.signalingChannel.stopOffering();
             } else if (message.type === 'candidate') {
                 const candidate = new RTCIceCandidate(message.candidate);
                 if (this.peerConnection.remoteDescription && this.peerConnection.remoteDescription.type) {
@@ -273,14 +332,6 @@ class SharingPeer extends EventTarget {
     lastEventData () {
         const event = this.lastDataChannelEvent;
         return event ? event.data : '';
-    }
-
-    stopNegotiation () {
-        if (this.signalingChannel) {
-            this.signalingChannel.stopNegotiation();
-            this.signalingState = 'connected';
-            log.log('Negotiation stopped');
-        }
     }
 }
 

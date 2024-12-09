@@ -1767,26 +1767,6 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
      */
     _this.signalName = null;
 
-    /**
-     * The timeout for polling messages.
-     * @type {number} - The timeout ID.
-     */
-    _this.pollingTimeout = null;
-
-    /**
-     * The duration of the offering timeout.
-     * @type {number} - The duration in milliseconds.
-     * @default 60000
-     */
-    _this.offeringTimeoutDuration = 60000;
-
-    /**
-     * The duration of the answering timeout.
-     * @type {number} - The duration in milliseconds.
-     * @default 60000
-     */
-    _this.answeringTimeoutDuration = 60000;
-
     // Replace with your Google Apps Script web app URL
     _this._serverUrl = 'https://script.google.com/macros/s/AKfycbx3RFGGAckbU-okJ2Cvnse7KmexGVUO8qcWvlevJczsx0wpl_a-Kxe_fi7ul0z4zISG/exec';
     return _this;
@@ -1818,21 +1798,12 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
 
     /**
      * Start polling for messages.
-     * @param {number} [duration] - The duration to poll for [ms].
      * @returns {void}
      */
   }, {
     key: "startPolling",
-    value: function startPolling(duration) {
+    value: function startPolling() {
       var _this2 = this;
-      if (duration) {
-        if (this.pollingTimeout) {
-          clearTimeout(this.pollingTimeout);
-        }
-        this.pollingTimeout = setTimeout(function () {
-          _this2.stopPolling();
-        }, duration);
-      }
       if (this._pollInterval) return;
       this._pollInterval = setInterval(function () {
         return _this2.pollMessages();
@@ -1847,10 +1818,6 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "stopPolling",
     value: function stopPolling() {
-      if (this.pollingTimeout) {
-        clearTimeout(this.pollingTimeout);
-        this.pollingTimeout = null;
-      }
       if (this._pollInterval) {
         clearInterval(this._pollInterval);
         this._pollInterval = null;
@@ -1986,13 +1953,12 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
               }
               return _context3.abrupt("return");
             case 2:
-              this.signalingState = 'offering';
+              this.startPolling();
               _context3.next = 5;
               return this.send(offer);
             case 5:
-              this.startPolling(this.offeringTimeoutDuration);
               log$1.log("Offering signal ".concat(this.signalName, " from ").concat(this._id));
-            case 7:
+            case 6:
             case "end":
               return _context3.stop();
           }
@@ -2004,36 +1970,56 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
       return startOffering;
     }())
   }, {
-    key: "stopOffering",
-    value: function stopOffering() {
-      if (this.signalingState !== 'offering') return;
-      this.stopPolling();
-      log$1.log("Stopped offering signal \"".concat(this.signalName, "\" from ").concat(this._id));
-      this.signalingState = 'connected';
-    }
-  }, {
     key: "startAnswering",
     value: function startAnswering() {
       if (this.signalingState !== 'connected') return;
-      this.signalingState = 'answering';
-      this.startPolling(this.answeringTimeoutDuration);
-    }
-  }, {
-    key: "stopAnswering",
-    value: function stopAnswering() {
-      if (this.signalingState !== 'answering') return;
-      this.stopPolling();
-      this.signalingState = 'connected';
+      this.startPolling();
     }
   }, {
     key: "stopNegotiation",
     value: function stopNegotiation() {
-      if (this.signalingState === 'offering') {
-        this.stopOffering();
-      } else if (this.signalingState === 'answering') {
-        this.stopAnswering();
-      }
+      this.stopPolling();
     }
+  }, {
+    key: "deleteOwnMessages",
+    value: function () {
+      var _deleteOwnMessages = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee4() {
+        var url;
+        return _regeneratorRuntime.wrap(function _callee4$(_context4) {
+          while (1) switch (_context4.prev = _context4.next) {
+            case 0:
+              if (this._connected) {
+                _context4.next = 2;
+                break;
+              }
+              return _context4.abrupt("return");
+            case 2:
+              _context4.prev = 2;
+              url = "".concat(this._serverUrl, "?action=delete") + "&signalName=".concat(encodeURIComponent(this.signalName)) + "&fromId=".concat(encodeURIComponent(this._id));
+              _context4.next = 6;
+              return fetch(url, {
+                method: 'GET',
+                cache: 'no-cache'
+              });
+            case 6:
+              log$1.debug('Own messages deleted');
+              _context4.next = 12;
+              break;
+            case 9:
+              _context4.prev = 9;
+              _context4.t0 = _context4["catch"](2);
+              log$1.warn('Error deleting own messages:', _context4.t0);
+            case 12:
+            case "end":
+              return _context4.stop();
+          }
+        }, _callee4, this, [[2, 9]]);
+      }));
+      function deleteOwnMessages() {
+        return _deleteOwnMessages.apply(this, arguments);
+      }
+      return deleteOwnMessages;
+    }()
   }]);
 }(/*#__PURE__*/_wrapNativeSuper(EventTarget));
 
@@ -2058,6 +2044,20 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
     _this.signalingChannel = signalingChannel;
     _this.signalingState = 'disconnected';
     _this.signalName = null;
+
+    /**
+     * The duration of the offering timeout.
+     * @type {number} - The duration in milliseconds.
+     * @default 60000
+     */
+    _this.offeringTimeoutDuration = 60000;
+
+    /**
+     * The duration of the answering timeout.
+     * @type {number} - The duration in milliseconds.
+     * @default 60000
+     */
+    _this.answeringTimeoutDuration = 60000;
     _this.peerConnection = null;
 
     /**
@@ -2070,7 +2070,6 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
     _this.lastDataChannelEvent = null;
     _this._remoteCandidatesQueue = [];
     _this.signalingChannel.addEventListener('message', _this.handleSignalingMessage.bind(_this));
-    _this.initializePeerConnection();
     return _this;
   }
   _inherits(SharingPeer, _EventTarget);
@@ -2104,34 +2103,123 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
       return connect;
     }()
   }, {
-    key: "startOffering",
+    key: "stopNegotiation",
     value: function () {
-      var _startOffering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
-        var offer;
+      var _stopNegotiation = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
+        var success,
+          _args2 = arguments;
         return _regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              if (!(this.signalingState !== 'connected')) {
-                _context2.next = 2;
+              success = _args2.length > 0 && _args2[0] !== undefined ? _args2[0] : false;
+              if (typeof this.negotiationTimeoutId === 'number') {
+                clearTimeout(this.negotiationTimeoutId);
+                this.negotiationTimeoutId = null;
+              }
+              _context2.next = 4;
+              return this.signalingChannel.stopNegotiation();
+            case 4:
+              if (!success) {
+                _context2.next = 8;
                 break;
               }
-              throw new Error('Not connected');
-            case 2:
-              this.signalingState = 'offering';
-              _context2.next = 5;
-              return this.peerConnection.createOffer();
-            case 5:
-              offer = _context2.sent;
-              _context2.next = 8;
-              return this.peerConnection.setLocalDescription(offer);
+              if (this.negotiationResolve) {
+                this.negotiationResolve();
+              }
+              _context2.next = 12;
+              break;
             case 8:
-              _context2.next = 10;
-              return this.signalingChannel.startOffering(offer);
-            case 10:
+              if (!this.negotiationReject) {
+                _context2.next = 12;
+                break;
+              }
+              _context2.next = 11;
+              return this.signalingChannel.deleteOwnMessages();
+            case 11:
+              this.negotiationReject(new Error('Negotiation rejected'));
+            case 12:
+              this.negotiationResolve = null;
+              this.negotiationReject = null;
+              this.signalingState = 'connected';
+              log$1.log('Negotiation stopped');
+            case 16:
             case "end":
               return _context2.stop();
           }
         }, _callee2, this);
+      }));
+      function stopNegotiation() {
+        return _stopNegotiation.apply(this, arguments);
+      }
+      return stopNegotiation;
+    }()
+  }, {
+    key: "startOffering",
+    value: function () {
+      var _startOffering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee5() {
+        var _this2 = this;
+        return _regeneratorRuntime.wrap(function _callee5$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
+            case 0:
+              _context5.next = 2;
+              return this.stopNegotiation();
+            case 2:
+              this.signalingState = 'offering';
+              _context5.next = 5;
+              return this.initializePeerConnection(true);
+            case 5:
+              return _context5.abrupt("return", new Promise(function (resolve, reject) {
+                _this2.negotiationResolve = resolve;
+                _this2.negotiationReject = reject;
+                _this2.negotiationTimeoutId = setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
+                  return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+                    while (1) switch (_context3.prev = _context3.next) {
+                      case 0:
+                        _this2.negotiationTimeoutId = null;
+                        _context3.next = 3;
+                        return _this2.signalingChannel.stopNegotiation();
+                      case 3:
+                        _context3.next = 5;
+                        return _this2.signalingChannel.deleteOwnMessages();
+                      case 5:
+                        _this2.signalingState = 'connected';
+                        reject(new Error('Offering timeout'));
+                      case 7:
+                      case "end":
+                        return _context3.stop();
+                    }
+                  }, _callee3);
+                })), _this2.offeringTimeoutDuration);
+                _this2.peerConnection.createOffer().then(/*#__PURE__*/function () {
+                  var _ref2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee4(offer) {
+                    return _regeneratorRuntime.wrap(function _callee4$(_context4) {
+                      while (1) switch (_context4.prev = _context4.next) {
+                        case 0:
+                          _context4.next = 2;
+                          return _this2.peerConnection.setLocalDescription(offer);
+                        case 2:
+                          _context4.next = 4;
+                          return _this2.signalingChannel.startOffering(offer);
+                        case 4:
+                          log$1.log("Offering signal ".concat(_this2.signalName));
+                        case 5:
+                        case "end":
+                          return _context4.stop();
+                      }
+                    }, _callee4);
+                  }));
+                  return function (_x2) {
+                    return _ref2.apply(this, arguments);
+                  };
+                }()).catch(function (err) {
+                  reject(err);
+                });
+              }));
+            case 6:
+            case "end":
+              return _context5.stop();
+          }
+        }, _callee5, this);
       }));
       function startOffering() {
         return _startOffering.apply(this, arguments);
@@ -2140,27 +2228,68 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
     }()
   }, {
     key: "startAnswering",
-    value: function startAnswering() {
-      if (this.signalingState !== 'connected') {
-        throw new Error('Not connected');
+    value: function () {
+      var _startAnswering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee7() {
+        var _this3 = this;
+        return _regeneratorRuntime.wrap(function _callee7$(_context7) {
+          while (1) switch (_context7.prev = _context7.next) {
+            case 0:
+              _context7.next = 2;
+              return this.stopNegotiation();
+            case 2:
+              this.signalingState = 'answering';
+              _context7.next = 5;
+              return this.initializePeerConnection(false);
+            case 5:
+              return _context7.abrupt("return", new Promise(function (resolve, reject) {
+                _this3.negotiationResolve = resolve;
+                _this3.negotiationReject = reject;
+                _this3.negotiationTimeoutId = setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee6() {
+                  return _regeneratorRuntime.wrap(function _callee6$(_context6) {
+                    while (1) switch (_context6.prev = _context6.next) {
+                      case 0:
+                        _this3.negotiationTimeoutId = null;
+                        _context6.next = 3;
+                        return _this3.signalingChannel.stopNegotiation();
+                      case 3:
+                        _context6.next = 5;
+                        return _this3.signalingChannel.deleteOwnMessages();
+                      case 5:
+                        _this3.signalingState = 'connected';
+                        reject(new Error('Answering timeout'));
+                      case 7:
+                      case "end":
+                        return _context6.stop();
+                    }
+                  }, _callee6);
+                })), _this3.answeringTimeoutDuration);
+                _this3.signalingChannel.startAnswering();
+              }));
+            case 6:
+            case "end":
+              return _context7.stop();
+          }
+        }, _callee7, this);
+      }));
+      function startAnswering() {
+        return _startAnswering.apply(this, arguments);
       }
-      this.signalingState = 'answering';
-      this.signalingChannel.startAnswering();
-      // Remove duplicate event listener setup
-    }
+      return startAnswering;
+    }()
   }, {
     key: "initializePeerConnection",
     value: function initializePeerConnection(isInitiator) {
-      var _this2 = this;
+      var _this4 = this;
+      this.disconnectPeer();
       this.peerConnection = new RTCPeerConnection({
         iceServers: [{
           urls: 'stun:stun.l.google.com:19302'
         }]
       });
-      this.peerConnection.onicecandidate = function (_ref) {
-        var candidate = _ref.candidate;
+      this.peerConnection.onicecandidate = function (_ref4) {
+        var candidate = _ref4.candidate;
         if (candidate) {
-          _this2.signalingChannel.send({
+          _this4.signalingChannel.send({
             type: 'candidate',
             candidate: candidate
           }).catch(function (err) {
@@ -2169,14 +2298,15 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
         }
       };
       this.peerConnection.onconnectionstatechange = function () {
-        log$1.log("Connection state: ".concat(_this2.peerConnection.connectionState));
-        if (_this2.peerConnection.connectionState === 'connected') {
-          _this2.signalingChannel.disconnect();
+        log$1.log("Connection state: ".concat(_this4.peerConnection.connectionState));
+        if (_this4.peerConnection.connectionState === 'connected') {
+          _this4.stopNegotiation(true);
+          _this4.signalingChannel.disconnect();
         }
       };
       this.peerConnection.ondatachannel = function (event) {
         var dataChannel = event.channel;
-        _this2.setupDataChannel(dataChannel);
+        _this4.setupDataChannel(dataChannel);
       };
       if (isInitiator) {
         var dataChannel = this.peerConnection.createDataChannel(this.dataChannelName);
@@ -2191,107 +2321,105 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "handleSignalingMessage",
     value: (function () {
-      var _handleSignalingMessage = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3(event) {
+      var _handleSignalingMessage = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee8(event) {
         var message, answer, candidate;
-        return _regeneratorRuntime.wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
+        return _regeneratorRuntime.wrap(function _callee8$(_context8) {
+          while (1) switch (_context8.prev = _context8.next) {
             case 0:
               message = event.data;
               if (message) {
-                _context3.next = 3;
+                _context8.next = 3;
                 break;
               }
-              return _context3.abrupt("return");
+              return _context8.abrupt("return");
             case 3:
-              _context3.prev = 3;
+              _context8.prev = 3;
               if (!(message.type === 'offer' && this.signalingState === 'answering')) {
-                _context3.next = 22;
+                _context8.next = 21;
                 break;
               }
               if (!(this.peerConnection.signalingState !== 'stable')) {
-                _context3.next = 8;
+                _context8.next = 8;
                 break;
               }
               log$1.warn('Cannot handle offer in signaling state:', this.peerConnection.signalingState);
-              return _context3.abrupt("return");
+              return _context8.abrupt("return");
             case 8:
-              _context3.next = 10;
+              _context8.next = 10;
               return this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
             case 10:
-              _context3.next = 12;
+              _context8.next = 12;
               return this._processQueuedRemoteCandidates();
             case 12:
-              _context3.next = 14;
+              _context8.next = 14;
               return this.peerConnection.createAnswer();
             case 14:
-              answer = _context3.sent;
-              _context3.next = 17;
+              answer = _context8.sent;
+              _context8.next = 17;
               return this.peerConnection.setLocalDescription(answer);
             case 17:
-              _context3.next = 19;
+              _context8.next = 19;
               return this.signalingChannel.send({
                 type: 'answer',
                 sdp: answer.sdp
               });
             case 19:
-              this.signalingChannel.stopAnswering();
-              _context3.next = 43;
+              _context8.next = 41;
               break;
-            case 22:
+            case 21:
               if (!(message.type === 'answer' && this.signalingState === 'offering')) {
-                _context3.next = 33;
+                _context8.next = 31;
                 break;
               }
               if (!(this.peerConnection.signalingState !== 'have-local-offer')) {
-                _context3.next = 26;
+                _context8.next = 25;
                 break;
               }
               log$1.warn('Cannot handle answer in signaling state:', this.peerConnection.signalingState);
-              return _context3.abrupt("return");
-            case 26:
-              _context3.next = 28;
+              return _context8.abrupt("return");
+            case 25:
+              _context8.next = 27;
               return this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
-            case 28:
-              _context3.next = 30;
+            case 27:
+              _context8.next = 29;
               return this._processQueuedRemoteCandidates();
-            case 30:
-              this.signalingChannel.stopOffering();
-              _context3.next = 43;
+            case 29:
+              _context8.next = 41;
               break;
-            case 33:
+            case 31:
               if (!(message.type === 'candidate')) {
-                _context3.next = 43;
+                _context8.next = 41;
                 break;
               }
               candidate = new RTCIceCandidate(message.candidate);
               if (!(this.peerConnection.remoteDescription && this.peerConnection.remoteDescription.type)) {
-                _context3.next = 41;
+                _context8.next = 39;
                 break;
               }
-              _context3.next = 38;
+              _context8.next = 36;
               return this.peerConnection.addIceCandidate(candidate);
-            case 38:
+            case 36:
               log$1.log('ICE candidate added:', candidate);
-              _context3.next = 43;
+              _context8.next = 41;
               break;
-            case 41:
+            case 39:
               // Remote description not set yet, queue the candidate
               this._remoteCandidatesQueue.push(candidate);
               log$1.log('ICE candidate queued:', candidate);
-            case 43:
-              _context3.next = 48;
+            case 41:
+              _context8.next = 46;
               break;
-            case 45:
-              _context3.prev = 45;
-              _context3.t0 = _context3["catch"](3);
-              log$1.warn('Error processing signaling message:', _context3.t0);
-            case 48:
+            case 43:
+              _context8.prev = 43;
+              _context8.t0 = _context8["catch"](3);
+              log$1.warn('Error processing signaling message:', _context8.t0);
+            case 46:
             case "end":
-              return _context3.stop();
+              return _context8.stop();
           }
-        }, _callee3, this, [[3, 45]]);
+        }, _callee8, this, [[3, 43]]);
       }));
-      function handleSignalingMessage(_x2) {
+      function handleSignalingMessage(_x3) {
         return _handleSignalingMessage.apply(this, arguments);
       }
       return handleSignalingMessage;
@@ -2299,52 +2427,52 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "_processQueuedRemoteCandidates",
     value: function () {
-      var _processQueuedRemoteCandidates2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee4() {
+      var _processQueuedRemoteCandidates2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee9() {
         var _iterator, _step, candidate;
-        return _regeneratorRuntime.wrap(function _callee4$(_context4) {
-          while (1) switch (_context4.prev = _context4.next) {
+        return _regeneratorRuntime.wrap(function _callee9$(_context9) {
+          while (1) switch (_context9.prev = _context9.next) {
             case 0:
               _iterator = _createForOfIteratorHelper(this._remoteCandidatesQueue);
-              _context4.prev = 1;
+              _context9.prev = 1;
               _iterator.s();
             case 3:
               if ((_step = _iterator.n()).done) {
-                _context4.next = 16;
+                _context9.next = 16;
                 break;
               }
               candidate = _step.value;
-              _context4.prev = 5;
-              _context4.next = 8;
+              _context9.prev = 5;
+              _context9.next = 8;
               return this.peerConnection.addIceCandidate(candidate);
             case 8:
               log$1.log('Queued ICE candidate added:', candidate);
-              _context4.next = 14;
+              _context9.next = 14;
               break;
             case 11:
-              _context4.prev = 11;
-              _context4.t0 = _context4["catch"](5);
-              log$1.warn('Error adding queued ICE candidate:', _context4.t0);
+              _context9.prev = 11;
+              _context9.t0 = _context9["catch"](5);
+              log$1.warn('Error adding queued ICE candidate:', _context9.t0);
             case 14:
-              _context4.next = 3;
+              _context9.next = 3;
               break;
             case 16:
-              _context4.next = 21;
+              _context9.next = 21;
               break;
             case 18:
-              _context4.prev = 18;
-              _context4.t1 = _context4["catch"](1);
-              _iterator.e(_context4.t1);
+              _context9.prev = 18;
+              _context9.t1 = _context9["catch"](1);
+              _iterator.e(_context9.t1);
             case 21:
-              _context4.prev = 21;
+              _context9.prev = 21;
               _iterator.f();
-              return _context4.finish(21);
+              return _context9.finish(21);
             case 24:
               this._remoteCandidatesQueue = [];
             case 25:
             case "end":
-              return _context4.stop();
+              return _context9.stop();
           }
-        }, _callee4, this, [[1, 18, 21, 24], [5, 11]]);
+        }, _callee9, this, [[1, 18, 21, 24], [5, 11]]);
       }));
       function _processQueuedRemoteCandidates() {
         return _processQueuedRemoteCandidates2.apply(this, arguments);
@@ -2354,17 +2482,17 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "setupDataChannel",
     value: function setupDataChannel(dataChannel) {
-      var _this3 = this;
+      var _this5 = this;
       this.dataChannel = dataChannel;
       dataChannel.onopen = function () {
-        _this3.dispatchEvent(new CustomEvent('dataChannelStateChanged', {
-          detail: _this3.dataChannel.readyState
+        _this5.dispatchEvent(new CustomEvent('dataChannelStateChanged', {
+          detail: _this5.dataChannel.readyState
         }));
-        log$1.log("Data channel opened: ".concat(_this3.dataChannelName));
+        log$1.log("Data channel opened: ".concat(_this5.dataChannelName));
       };
       dataChannel.onclose = function () {
-        _this3.dispatchEvent(new CustomEvent('dataChannelStateChanged', {
-          detail: _this3.dataChannel ? _this3.dataChannel.readyState : 'closed'
+        _this5.dispatchEvent(new CustomEvent('dataChannelStateChanged', {
+          detail: _this5.dataChannel ? _this5.dataChannel.readyState : 'closed'
         }));
         log$1.log('Data channel closed');
       };
@@ -2373,11 +2501,11 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
         var message = JSON.parse(event.data);
         switch (message.type) {
           case 'SET_VALUE':
-            _this3.dataChannelValues[message.content.key] = message.content.value;
+            _this5.dataChannelValues[message.content.key] = message.content.value;
             break;
           case 'EVENT':
-            _this3.lastDataChannelEvent = message.content;
-            _this3.dispatchEvent(new CustomEvent('sharedEvent', {
+            _this5.lastDataChannelEvent = message.content;
+            _this5.dispatchEvent(new CustomEvent('sharedEvent', {
               detail: message.content
             }));
             break;
@@ -2485,15 +2613,6 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
       var event = this.lastDataChannelEvent;
       return event ? event.data : '';
     }
-  }, {
-    key: "stopNegotiation",
-    value: function stopNegotiation() {
-      if (this.signalingChannel) {
-        this.signalingChannel.stopNegotiation();
-        this.signalingState = 'connected';
-        log$1.log('Negotiation stopped');
-      }
-    }
   }]);
 }(/*#__PURE__*/_wrapNativeSuper(EventTarget));
 
@@ -2575,22 +2694,25 @@ var ExtensionBlocks = /*#__PURE__*/function () {
                 _context.next = 3;
                 break;
               }
-              return _context.abrupt("return", Promise.resolve('Already offering'));
+              return _context.abrupt("return", 'Already offering');
             case 3:
-              this.peer.disconnectPeer();
-              this.peer.initializePeerConnection(true);
-              _context.next = 7;
+              _context.prev = 3;
+              _context.next = 6;
               return this.peer.connect(signalName);
-            case 7:
-              _context.next = 9;
+            case 6:
+              _context.next = 8;
               return this.peer.startOffering();
-            case 9:
+            case 8:
               return _context.abrupt("return", "Offering signal ".concat(signalName));
-            case 10:
+            case 11:
+              _context.prev = 11;
+              _context.t0 = _context["catch"](3);
+              return _context.abrupt("return", "Failed to offer signal ".concat(signalName, ": ").concat(_context.t0));
+            case 14:
             case "end":
               return _context.stop();
           }
-        }, _callee, this);
+        }, _callee, this, [[3, 11]]);
       }));
       function makeSignal(_x) {
         return _makeSignal.apply(this, arguments);
@@ -2612,20 +2734,23 @@ var ExtensionBlocks = /*#__PURE__*/function () {
               }
               return _context2.abrupt("return", Promise.resolve('Already answering'));
             case 3:
-              this.peer.disconnectPeer();
-              this.peer.initializePeerConnection(false);
-              _context2.next = 7;
+              _context2.prev = 3;
+              _context2.next = 6;
               return this.peer.connect(signalName);
-            case 7:
-              _context2.next = 9;
+            case 6:
+              _context2.next = 8;
               return this.peer.startAnswering();
-            case 9:
+            case 8:
               return _context2.abrupt("return", "Answering signal ".concat(signalName));
-            case 10:
+            case 11:
+              _context2.prev = 11;
+              _context2.t0 = _context2["catch"](3);
+              return _context2.abrupt("return", "Failed to answer signal ".concat(signalName, ": ").concat(_context2.t0));
+            case 14:
             case "end":
               return _context2.stop();
           }
-        }, _callee2, this);
+        }, _callee2, this, [[3, 11]]);
       }));
       function connectSignal(_x2) {
         return _connectSignal.apply(this, arguments);
@@ -2639,10 +2764,26 @@ var ExtensionBlocks = /*#__PURE__*/function () {
     }
   }, {
     key: "disconnectPeer",
-    value: function disconnectPeer() {
-      this.peer.disconnectPeer();
-    }
-
+    value: function () {
+      var _disconnectPeer = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
+        return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              _context3.next = 2;
+              return this.peer.stopNegotiation();
+            case 2:
+              this.peer.disconnectPeer();
+            case 3:
+            case "end":
+              return _context3.stop();
+          }
+        }, _callee3, this);
+      }));
+      function disconnectPeer() {
+        return _disconnectPeer.apply(this, arguments);
+      }
+      return disconnectPeer;
+    }()
     /**
      * Return the value of the key.
      * @param {object} args - arguments for the block.

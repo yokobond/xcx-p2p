@@ -122,13 +122,15 @@ class ExtensionBlocks {
         const signalName = String(args.SIGNAL_NAME).trim();
         if (this.peer.signalName === signalName &&
             this.peer.signalingState === 'offering') {
-            return Promise.resolve('Already offering');
+            return 'Already offering';
         }
-        this.peer.disconnectPeer();
-        this.peer.initializePeerConnection(true);
-        await this.peer.connect(signalName);
-        await this.peer.startOffering();
-        return `Offering signal ${signalName}`;
+        try {
+            await this.peer.connect(signalName);
+            await this.peer.startOffering();
+            return `Offering signal ${signalName}`;
+        } catch (e) {
+            return `Failed to offer signal ${signalName}: ${e}`;
+        }
     }
 
     async connectSignal (args) {
@@ -137,18 +139,21 @@ class ExtensionBlocks {
             this.peer.signalingState === 'answering') {
             return Promise.resolve('Already answering');
         }
-        this.peer.disconnectPeer();
-        this.peer.initializePeerConnection(false);
-        await this.peer.connect(signalName);
-        await this.peer.startAnswering();
-        return `Answering signal ${signalName}`;
+        try {
+            await this.peer.connect(signalName);
+            await this.peer.startAnswering();
+            return `Answering signal ${signalName}`;
+        } catch (e) {
+            return `Failed to answer signal ${signalName}: ${e}`;
+        }
     }
 
     isConnected () {
         return this.peer.isConnected();
     }
 
-    disconnectPeer () {
+    async disconnectPeer () {
+        await this.peer.stopNegotiation();
         this.peer.disconnectPeer();
     }
 
