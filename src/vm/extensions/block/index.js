@@ -3,7 +3,6 @@ import ArgumentType from '../../extension-support/argument-type';
 import Cast from '../../util/cast';
 import translations from './translations.json';
 import blockIcon from './block-icon.png';
-import SignalingChannel from './sheet-signaling-channel';
 import SharingPeer from './sharing-peer';
 
 /**
@@ -104,18 +103,19 @@ class ExtensionBlocks {
          * The peer connection manager.
          * @type {SharingPeer}
          */
-        this.peer = new SharingPeer(new SignalingChannel());
+        this.peer = new SharingPeer();
 
         this.peer.addEventListener('dataChannelStateChanged', event => {
             if (event.detail === 'open') {
                 this.peer.stopNegotiation();
-                // this.runtime.startHats('xcxP2P_whenConnected');
             }
             if (event.detail === 'closed') {
-                // this.runtime.startHats('xcxP2P_whenDisconnected');
+                this.peer.disconnectPeer();
             }
         });
         this.peer.addEventListener('sharedEvent', event => this.onSharedEvent(event.detail));
+
+        this.runtime.on('PROJECT_STOP_ALL', this.stopSignaling.bind(this));
     }
 
     async makeSignal (args) {
@@ -125,7 +125,7 @@ class ExtensionBlocks {
             return 'Already offering';
         }
         try {
-            await this.peer.connect(signalName);
+            await this.peer.connectSignalingChannel(signalName);
             await this.peer.startOffering();
             return `Offering signal ${signalName}`;
         } catch (e) {
@@ -140,7 +140,7 @@ class ExtensionBlocks {
             return Promise.resolve('Already answering');
         }
         try {
-            await this.peer.connect(signalName);
+            await this.peer.connectSignalingChannel(signalName);
             await this.peer.startAnswering();
             return `Answering signal ${signalName}`;
         } catch (e) {
@@ -148,8 +148,33 @@ class ExtensionBlocks {
         }
     }
 
-    isConnected () {
+    async connectPeer (args) {
+        const signalName = String(args.SIGNAL_NAME).trim();
+        if (this.peer.signalName === signalName && this.peer.isConnected()) {
+            return 'Already connected';
+        }
+        try {
+            await this.peer.startSignaling(signalName);
+            return `Connected to peer ${signalName}`;
+        } catch (e) {
+            return `Failed to connect to peer ${signalName}: ${e}`;
+        }
+    }
+
+    isPeerConnected () {
         return this.peer.isConnected();
+    }
+
+    whenPeerConnected () {
+        return this.peer.isConnected();
+    }
+
+    whenPeerDisconnected () {
+        return !this.peer.isConnected();
+    }
+
+    async stopSignaling () {
+        await this.peer.stopNegotiation();
     }
 
     async disconnectPeer () {
@@ -232,7 +257,24 @@ class ExtensionBlocks {
             showStatusButton: false,
             blocks: [
                 {
+                    opcode: 'connectPeer',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'xcxP2P.connectPeer',
+                        default: 'connect peer [SIGNAL_NAME]',
+                        description: 'connect the WebRTC peer connection'
+                    }),
+                    arguments: {
+                        SIGNAL_NAME: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'name'
+                        }
+                    },
+                    func: 'connectPeer'
+                },
+                {
                     opcode: 'makeSignal',
+                    hideFromPalette: true,
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'xcxP2P.makeSignal',
@@ -249,6 +291,7 @@ class ExtensionBlocks {
                 },
                 {
                     opcode: 'connectSignal',
+                    hideFromPalette: true,
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'xcxP2P.connectSignal',
@@ -264,13 +307,31 @@ class ExtensionBlocks {
                     func: 'connectSignal'
                 },
                 {
-                    opcode: 'isConnected',
+                    opcode: 'whenPeerConnected',
+                    blockType: BlockType.HAT,
+                    text: formatMessage({
+                        id: 'xcxP2P.whenPeerConnected',
+                        default: 'when peer connected'
+                    }),
+                    isEdgeActivated: true
+                },
+                {
+                    opcode: 'whenPeerDisconnected',
+                    blockType: BlockType.HAT,
+                    text: formatMessage({
+                        id: 'xcxP2P.whenPeerDisconnected',
+                        default: 'when peer disconnected'
+                    }),
+                    isEdgeActivated: true
+                },
+                {
+                    opcode: 'isPeerConnected',
                     blockType: BlockType.BOOLEAN,
                     text: formatMessage({
-                        id: 'xcxP2P.isConnected',
+                        id: 'xcxP2P.isPeerConnected',
                         default: 'connected'
                     }),
-                    func: 'isConnected'
+                    func: 'isPeerConnected'
                 },
                 {
                     opcode: 'disconnectPeer',

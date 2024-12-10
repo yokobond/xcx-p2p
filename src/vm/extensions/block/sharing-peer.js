@@ -1,4 +1,5 @@
 import log from '../../util/log';
+import SheetSignalingChannel from './sheet-signaling-channel';
 
 /**
  * Class handling the peer connection and data channel logic.
@@ -6,11 +7,10 @@ import log from '../../util/log';
 class SharingPeer extends EventTarget {
     /**
      * Constructs a new PeerConnection instance.
-     * @param {SignalingChannel} signalingChannel - The signaling channel to use.
      */
-    constructor (signalingChannel) {
+    constructor () {
         super();
-        this.signalingChannel = signalingChannel;
+        this.signalingChannel = new SheetSignalingChannel();
         this.signalingState = 'disconnected';
         this.signalName = null;
 
@@ -45,14 +45,33 @@ class SharingPeer extends EventTarget {
         this.signalingChannel.addEventListener('message', this.handleSignalingMessage.bind(this));
     }
 
-    async connect (signalName) {
-        if (this.signalingChannel.signalName === signalName &&
-            (this.signalingState === 'offering' || this.signalingState === 'answering')) {
+    async connectSignalingChannel (signalName) {
+        if ((this.signalingChannel.signalName === signalName) && this.isConnected()) {
             return;
         }
         await this.signalingChannel.connect(signalName);
         this.signalName = signalName;
         this.signalingState = 'connected';
+    }
+
+    async startSignaling (signalName) {
+        await this.connectSignalingChannel(signalName);
+
+        try {
+            // Check if someone is already offering this signal
+            const isOffering = await this.signalingChannel.isOffering();
+            
+            if (isOffering) {
+                // Someone is offering, proceed with answering
+                await this.startAnswering();
+            } else {
+                // No one is offering, start offering
+                await this.startOffering();
+            }
+        } catch (err) {
+            await this.stopNegotiation();
+            throw new Error(`Failed to start signaling: ${err.message}`);
+        }
     }
 
     async stopNegotiation (success = false) {
@@ -76,7 +95,6 @@ class SharingPeer extends EventTarget {
     }
 
     async startOffering () {
-        await this.stopNegotiation();
         this.signalingState = 'offering';
         await this.initializePeerConnection(true);
         
@@ -104,7 +122,6 @@ class SharingPeer extends EventTarget {
     }
 
     async startAnswering () {
-        await this.stopNegotiation();
         this.signalingState = 'answering';
         await this.initializePeerConnection(false);
         return new Promise((resolve, reject) => {
@@ -253,7 +270,7 @@ class SharingPeer extends EventTarget {
      * @returns {boolean} True if the peer is connected.
      */
     isConnected () {
-        return this.peerConnection && this.peerConnection.connectionState === 'connected';
+        return this.peerConnection ? this.peerConnection.connectionState === 'connected' : false;
     }
 
     disconnectPeer () {

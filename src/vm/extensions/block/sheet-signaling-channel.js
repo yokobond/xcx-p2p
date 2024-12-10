@@ -152,6 +152,31 @@ class SheetSignalingChannel extends EventTarget {
         }
     }
 
+    async isOffering () {
+        if (!this._connected) return false;
+        try {
+            const url = `${this._serverUrl}?action=isOffering` +
+                `&signalName=${encodeURIComponent(this.signalName)}` +
+                `&recipientId=${encodeURIComponent(this._id)}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors', // Changed from no-cors to cors
+                cache: 'no-cache',
+                headers: {
+                    Accept: 'application/json'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            const data = await response.json();
+            return data.isOffering || false;
+        } catch (err) {
+            log.warn('Error checking if offering:', err);
+            return false;
+        }
+    }
+
 }
 
 export default SheetSignalingChannel;

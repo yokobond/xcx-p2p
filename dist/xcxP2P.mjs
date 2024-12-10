@@ -2020,6 +2020,61 @@ var SheetSignalingChannel = /*#__PURE__*/function (_EventTarget) {
       }
       return deleteOwnMessages;
     }()
+  }, {
+    key: "isOffering",
+    value: function () {
+      var _isOffering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee5() {
+        var url, response, data;
+        return _regeneratorRuntime.wrap(function _callee5$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
+            case 0:
+              if (this._connected) {
+                _context5.next = 2;
+                break;
+              }
+              return _context5.abrupt("return", false);
+            case 2:
+              _context5.prev = 2;
+              url = "".concat(this._serverUrl, "?action=isOffering") + "&signalName=".concat(encodeURIComponent(this.signalName)) + "&recipientId=".concat(encodeURIComponent(this._id));
+              _context5.next = 6;
+              return fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                // Changed from no-cors to cors
+                cache: 'no-cache',
+                headers: {
+                  Accept: 'application/json'
+                }
+              });
+            case 6:
+              response = _context5.sent;
+              if (response.ok) {
+                _context5.next = 9;
+                break;
+              }
+              throw new Error("Server returned ".concat(response.status));
+            case 9:
+              _context5.next = 11;
+              return response.json();
+            case 11:
+              data = _context5.sent;
+              return _context5.abrupt("return", data.isOffering || false);
+            case 15:
+              _context5.prev = 15;
+              _context5.t0 = _context5["catch"](2);
+              log$1.warn('Error checking if offering:', _context5.t0);
+              return _context5.abrupt("return", false);
+            case 19:
+            case "end":
+              return _context5.stop();
+          }
+        }, _callee5, this, [[2, 15]]);
+      }));
+      function isOffering() {
+        return _isOffering.apply(this, arguments);
+      }
+      return isOffering;
+    }()
   }]);
 }(/*#__PURE__*/_wrapNativeSuper(EventTarget));
 
@@ -2035,13 +2090,12 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   /**
    * Constructs a new PeerConnection instance.
-   * @param {SignalingChannel} signalingChannel - The signaling channel to use.
    */
-  function SharingPeer(signalingChannel) {
+  function SharingPeer() {
     var _this;
     _classCallCheck$1(this, SharingPeer);
     _this = _callSuper(this, SharingPeer);
-    _this.signalingChannel = signalingChannel;
+    _this.signalingChannel = new SheetSignalingChannel();
     _this.signalingState = 'disconnected';
     _this.signalName = null;
 
@@ -2074,13 +2128,13 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }
   _inherits(SharingPeer, _EventTarget);
   return _createClass$1(SharingPeer, [{
-    key: "connect",
+    key: "connectSignalingChannel",
     value: function () {
-      var _connect = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(signalName) {
+      var _connectSignalingChannel = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee(signalName) {
         return _regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
-              if (!(this.signalingChannel.signalName === signalName && (this.signalingState === 'offering' || this.signalingState === 'answering'))) {
+              if (!(this.signalingChannel.signalName === signalName && this.isConnected())) {
                 _context.next = 2;
                 break;
               }
@@ -2097,43 +2151,92 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
           }
         }, _callee, this);
       }));
-      function connect(_x) {
-        return _connect.apply(this, arguments);
+      function connectSignalingChannel(_x) {
+        return _connectSignalingChannel.apply(this, arguments);
       }
-      return connect;
+      return connectSignalingChannel;
+    }()
+  }, {
+    key: "startSignaling",
+    value: function () {
+      var _startSignaling = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2(signalName) {
+        var isOffering;
+        return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              _context2.next = 2;
+              return this.connectSignalingChannel(signalName);
+            case 2:
+              _context2.prev = 2;
+              _context2.next = 5;
+              return this.signalingChannel.isOffering();
+            case 5:
+              isOffering = _context2.sent;
+              if (!isOffering) {
+                _context2.next = 11;
+                break;
+              }
+              _context2.next = 9;
+              return this.startAnswering();
+            case 9:
+              _context2.next = 13;
+              break;
+            case 11:
+              _context2.next = 13;
+              return this.startOffering();
+            case 13:
+              _context2.next = 20;
+              break;
+            case 15:
+              _context2.prev = 15;
+              _context2.t0 = _context2["catch"](2);
+              _context2.next = 19;
+              return this.stopNegotiation();
+            case 19:
+              throw new Error("Failed to start signaling: ".concat(_context2.t0.message));
+            case 20:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this, [[2, 15]]);
+      }));
+      function startSignaling(_x2) {
+        return _startSignaling.apply(this, arguments);
+      }
+      return startSignaling;
     }()
   }, {
     key: "stopNegotiation",
     value: function () {
-      var _stopNegotiation = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee2() {
+      var _stopNegotiation = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
         var success,
-          _args2 = arguments;
-        return _regeneratorRuntime.wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
+          _args3 = arguments;
+        return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) switch (_context3.prev = _context3.next) {
             case 0:
-              success = _args2.length > 0 && _args2[0] !== undefined ? _args2[0] : false;
+              success = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : false;
               if (typeof this.negotiationTimeoutId === 'number') {
                 clearTimeout(this.negotiationTimeoutId);
                 this.negotiationTimeoutId = null;
               }
-              _context2.next = 4;
+              _context3.next = 4;
               return this.signalingChannel.stopNegotiation();
             case 4:
               if (!success) {
-                _context2.next = 8;
+                _context3.next = 8;
                 break;
               }
               if (this.negotiationResolve) {
                 this.negotiationResolve();
               }
-              _context2.next = 12;
+              _context3.next = 12;
               break;
             case 8:
               if (!this.negotiationReject) {
-                _context2.next = 12;
+                _context3.next = 12;
                 break;
               }
-              _context2.next = 11;
+              _context3.next = 11;
               return this.signalingChannel.deleteOwnMessages();
             case 11:
               this.negotiationReject(new Error('Negotiation rejected'));
@@ -2144,9 +2247,9 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
               log$1.log('Negotiation stopped');
             case 16:
             case "end":
-              return _context2.stop();
+              return _context3.stop();
           }
-        }, _callee2, this);
+        }, _callee3, this);
       }));
       function stopNegotiation() {
         return _stopNegotiation.apply(this, arguments);
@@ -2156,70 +2259,67 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "startOffering",
     value: function () {
-      var _startOffering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee5() {
+      var _startOffering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee6() {
         var _this2 = this;
-        return _regeneratorRuntime.wrap(function _callee5$(_context5) {
-          while (1) switch (_context5.prev = _context5.next) {
+        return _regeneratorRuntime.wrap(function _callee6$(_context6) {
+          while (1) switch (_context6.prev = _context6.next) {
             case 0:
-              _context5.next = 2;
-              return this.stopNegotiation();
-            case 2:
               this.signalingState = 'offering';
-              _context5.next = 5;
+              _context6.next = 3;
               return this.initializePeerConnection(true);
-            case 5:
-              return _context5.abrupt("return", new Promise(function (resolve, reject) {
+            case 3:
+              return _context6.abrupt("return", new Promise(function (resolve, reject) {
                 _this2.negotiationResolve = resolve;
                 _this2.negotiationReject = reject;
-                _this2.negotiationTimeoutId = setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
-                  return _regeneratorRuntime.wrap(function _callee3$(_context3) {
-                    while (1) switch (_context3.prev = _context3.next) {
+                _this2.negotiationTimeoutId = setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee4() {
+                  return _regeneratorRuntime.wrap(function _callee4$(_context4) {
+                    while (1) switch (_context4.prev = _context4.next) {
                       case 0:
                         _this2.negotiationTimeoutId = null;
-                        _context3.next = 3;
+                        _context4.next = 3;
                         return _this2.signalingChannel.stopNegotiation();
                       case 3:
-                        _context3.next = 5;
+                        _context4.next = 5;
                         return _this2.signalingChannel.deleteOwnMessages();
                       case 5:
                         _this2.signalingState = 'connected';
                         reject(new Error('Offering timeout'));
                       case 7:
                       case "end":
-                        return _context3.stop();
+                        return _context4.stop();
                     }
-                  }, _callee3);
+                  }, _callee4);
                 })), _this2.offeringTimeoutDuration);
                 _this2.peerConnection.createOffer().then(/*#__PURE__*/function () {
-                  var _ref2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee4(offer) {
-                    return _regeneratorRuntime.wrap(function _callee4$(_context4) {
-                      while (1) switch (_context4.prev = _context4.next) {
+                  var _ref2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee5(offer) {
+                    return _regeneratorRuntime.wrap(function _callee5$(_context5) {
+                      while (1) switch (_context5.prev = _context5.next) {
                         case 0:
-                          _context4.next = 2;
+                          _context5.next = 2;
                           return _this2.peerConnection.setLocalDescription(offer);
                         case 2:
-                          _context4.next = 4;
+                          _context5.next = 4;
                           return _this2.signalingChannel.startOffering(offer);
                         case 4:
                           log$1.log("Offering signal ".concat(_this2.signalName));
                         case 5:
                         case "end":
-                          return _context4.stop();
+                          return _context5.stop();
                       }
-                    }, _callee4);
+                    }, _callee5);
                   }));
-                  return function (_x2) {
+                  return function (_x3) {
                     return _ref2.apply(this, arguments);
                   };
                 }()).catch(function (err) {
                   reject(err);
                 });
               }));
-            case 6:
+            case 4:
             case "end":
-              return _context5.stop();
+              return _context6.stop();
           }
-        }, _callee5, this);
+        }, _callee6, this);
       }));
       function startOffering() {
         return _startOffering.apply(this, arguments);
@@ -2229,47 +2329,44 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "startAnswering",
     value: function () {
-      var _startAnswering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee7() {
+      var _startAnswering = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee8() {
         var _this3 = this;
-        return _regeneratorRuntime.wrap(function _callee7$(_context7) {
-          while (1) switch (_context7.prev = _context7.next) {
+        return _regeneratorRuntime.wrap(function _callee8$(_context8) {
+          while (1) switch (_context8.prev = _context8.next) {
             case 0:
-              _context7.next = 2;
-              return this.stopNegotiation();
-            case 2:
               this.signalingState = 'answering';
-              _context7.next = 5;
+              _context8.next = 3;
               return this.initializePeerConnection(false);
-            case 5:
-              return _context7.abrupt("return", new Promise(function (resolve, reject) {
+            case 3:
+              return _context8.abrupt("return", new Promise(function (resolve, reject) {
                 _this3.negotiationResolve = resolve;
                 _this3.negotiationReject = reject;
-                _this3.negotiationTimeoutId = setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee6() {
-                  return _regeneratorRuntime.wrap(function _callee6$(_context6) {
-                    while (1) switch (_context6.prev = _context6.next) {
+                _this3.negotiationTimeoutId = setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee7() {
+                  return _regeneratorRuntime.wrap(function _callee7$(_context7) {
+                    while (1) switch (_context7.prev = _context7.next) {
                       case 0:
                         _this3.negotiationTimeoutId = null;
-                        _context6.next = 3;
+                        _context7.next = 3;
                         return _this3.signalingChannel.stopNegotiation();
                       case 3:
-                        _context6.next = 5;
+                        _context7.next = 5;
                         return _this3.signalingChannel.deleteOwnMessages();
                       case 5:
                         _this3.signalingState = 'connected';
                         reject(new Error('Answering timeout'));
                       case 7:
                       case "end":
-                        return _context6.stop();
+                        return _context7.stop();
                     }
-                  }, _callee6);
+                  }, _callee7);
                 })), _this3.answeringTimeoutDuration);
                 _this3.signalingChannel.startAnswering();
               }));
-            case 6:
+            case 4:
             case "end":
-              return _context7.stop();
+              return _context8.stop();
           }
-        }, _callee7, this);
+        }, _callee8, this);
       }));
       function startAnswering() {
         return _startAnswering.apply(this, arguments);
@@ -2321,105 +2418,105 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "handleSignalingMessage",
     value: (function () {
-      var _handleSignalingMessage = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee8(event) {
+      var _handleSignalingMessage = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee9(event) {
         var message, answer, candidate;
-        return _regeneratorRuntime.wrap(function _callee8$(_context8) {
-          while (1) switch (_context8.prev = _context8.next) {
+        return _regeneratorRuntime.wrap(function _callee9$(_context9) {
+          while (1) switch (_context9.prev = _context9.next) {
             case 0:
               message = event.data;
               if (message) {
-                _context8.next = 3;
+                _context9.next = 3;
                 break;
               }
-              return _context8.abrupt("return");
+              return _context9.abrupt("return");
             case 3:
-              _context8.prev = 3;
+              _context9.prev = 3;
               if (!(message.type === 'offer' && this.signalingState === 'answering')) {
-                _context8.next = 21;
+                _context9.next = 21;
                 break;
               }
               if (!(this.peerConnection.signalingState !== 'stable')) {
-                _context8.next = 8;
+                _context9.next = 8;
                 break;
               }
               log$1.warn('Cannot handle offer in signaling state:', this.peerConnection.signalingState);
-              return _context8.abrupt("return");
+              return _context9.abrupt("return");
             case 8:
-              _context8.next = 10;
+              _context9.next = 10;
               return this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
             case 10:
-              _context8.next = 12;
+              _context9.next = 12;
               return this._processQueuedRemoteCandidates();
             case 12:
-              _context8.next = 14;
+              _context9.next = 14;
               return this.peerConnection.createAnswer();
             case 14:
-              answer = _context8.sent;
-              _context8.next = 17;
+              answer = _context9.sent;
+              _context9.next = 17;
               return this.peerConnection.setLocalDescription(answer);
             case 17:
-              _context8.next = 19;
+              _context9.next = 19;
               return this.signalingChannel.send({
                 type: 'answer',
                 sdp: answer.sdp
               });
             case 19:
-              _context8.next = 41;
+              _context9.next = 41;
               break;
             case 21:
               if (!(message.type === 'answer' && this.signalingState === 'offering')) {
-                _context8.next = 31;
+                _context9.next = 31;
                 break;
               }
               if (!(this.peerConnection.signalingState !== 'have-local-offer')) {
-                _context8.next = 25;
+                _context9.next = 25;
                 break;
               }
               log$1.warn('Cannot handle answer in signaling state:', this.peerConnection.signalingState);
-              return _context8.abrupt("return");
+              return _context9.abrupt("return");
             case 25:
-              _context8.next = 27;
+              _context9.next = 27;
               return this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
             case 27:
-              _context8.next = 29;
+              _context9.next = 29;
               return this._processQueuedRemoteCandidates();
             case 29:
-              _context8.next = 41;
+              _context9.next = 41;
               break;
             case 31:
               if (!(message.type === 'candidate')) {
-                _context8.next = 41;
+                _context9.next = 41;
                 break;
               }
               candidate = new RTCIceCandidate(message.candidate);
               if (!(this.peerConnection.remoteDescription && this.peerConnection.remoteDescription.type)) {
-                _context8.next = 39;
+                _context9.next = 39;
                 break;
               }
-              _context8.next = 36;
+              _context9.next = 36;
               return this.peerConnection.addIceCandidate(candidate);
             case 36:
               log$1.log('ICE candidate added:', candidate);
-              _context8.next = 41;
+              _context9.next = 41;
               break;
             case 39:
               // Remote description not set yet, queue the candidate
               this._remoteCandidatesQueue.push(candidate);
               log$1.log('ICE candidate queued:', candidate);
             case 41:
-              _context8.next = 46;
+              _context9.next = 46;
               break;
             case 43:
-              _context8.prev = 43;
-              _context8.t0 = _context8["catch"](3);
-              log$1.warn('Error processing signaling message:', _context8.t0);
+              _context9.prev = 43;
+              _context9.t0 = _context9["catch"](3);
+              log$1.warn('Error processing signaling message:', _context9.t0);
             case 46:
             case "end":
-              return _context8.stop();
+              return _context9.stop();
           }
-        }, _callee8, this, [[3, 43]]);
+        }, _callee9, this, [[3, 43]]);
       }));
-      function handleSignalingMessage(_x3) {
+      function handleSignalingMessage(_x4) {
         return _handleSignalingMessage.apply(this, arguments);
       }
       return handleSignalingMessage;
@@ -2427,52 +2524,52 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "_processQueuedRemoteCandidates",
     value: function () {
-      var _processQueuedRemoteCandidates2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee9() {
+      var _processQueuedRemoteCandidates2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee10() {
         var _iterator, _step, candidate;
-        return _regeneratorRuntime.wrap(function _callee9$(_context9) {
-          while (1) switch (_context9.prev = _context9.next) {
+        return _regeneratorRuntime.wrap(function _callee10$(_context10) {
+          while (1) switch (_context10.prev = _context10.next) {
             case 0:
               _iterator = _createForOfIteratorHelper(this._remoteCandidatesQueue);
-              _context9.prev = 1;
+              _context10.prev = 1;
               _iterator.s();
             case 3:
               if ((_step = _iterator.n()).done) {
-                _context9.next = 16;
+                _context10.next = 16;
                 break;
               }
               candidate = _step.value;
-              _context9.prev = 5;
-              _context9.next = 8;
+              _context10.prev = 5;
+              _context10.next = 8;
               return this.peerConnection.addIceCandidate(candidate);
             case 8:
               log$1.log('Queued ICE candidate added:', candidate);
-              _context9.next = 14;
+              _context10.next = 14;
               break;
             case 11:
-              _context9.prev = 11;
-              _context9.t0 = _context9["catch"](5);
-              log$1.warn('Error adding queued ICE candidate:', _context9.t0);
+              _context10.prev = 11;
+              _context10.t0 = _context10["catch"](5);
+              log$1.warn('Error adding queued ICE candidate:', _context10.t0);
             case 14:
-              _context9.next = 3;
+              _context10.next = 3;
               break;
             case 16:
-              _context9.next = 21;
+              _context10.next = 21;
               break;
             case 18:
-              _context9.prev = 18;
-              _context9.t1 = _context9["catch"](1);
-              _iterator.e(_context9.t1);
+              _context10.prev = 18;
+              _context10.t1 = _context10["catch"](1);
+              _iterator.e(_context10.t1);
             case 21:
-              _context9.prev = 21;
+              _context10.prev = 21;
               _iterator.f();
-              return _context9.finish(21);
+              return _context10.finish(21);
             case 24:
               this._remoteCandidatesQueue = [];
             case 25:
             case "end":
-              return _context9.stop();
+              return _context10.stop();
           }
-        }, _callee9, this, [[1, 18, 21, 24], [5, 11]]);
+        }, _callee10, this, [[1, 18, 21, 24], [5, 11]]);
       }));
       function _processQueuedRemoteCandidates() {
         return _processQueuedRemoteCandidates2.apply(this, arguments);
@@ -2522,7 +2619,7 @@ var SharingPeer = /*#__PURE__*/function (_EventTarget) {
   }, {
     key: "isConnected",
     value: function isConnected() {
-      return this.peerConnection && this.peerConnection.connectionState === 'connected';
+      return this.peerConnection ? this.peerConnection.connectionState === 'connected' : false;
     }
   }, {
     key: "disconnectPeer",
@@ -2669,17 +2766,19 @@ var ExtensionBlocks = /*#__PURE__*/function () {
      * The peer connection manager.
      * @type {SharingPeer}
      */
-    this.peer = new SharingPeer(new SheetSignalingChannel());
+    this.peer = new SharingPeer();
     this.peer.addEventListener('dataChannelStateChanged', function (event) {
       if (event.detail === 'open') {
         _this.peer.stopNegotiation();
-        // this.runtime.startHats('xcxP2P_whenConnected');
       }
-      if (event.detail === 'closed') ;
+      if (event.detail === 'closed') {
+        _this.peer.disconnectPeer();
+      }
     });
     this.peer.addEventListener('sharedEvent', function (event) {
       return _this.onSharedEvent(event.detail);
     });
+    this.runtime.on('PROJECT_STOP_ALL', this.stopSignaling.bind(this));
   }
   return _createClass$1(ExtensionBlocks, [{
     key: "makeSignal",
@@ -2698,7 +2797,7 @@ var ExtensionBlocks = /*#__PURE__*/function () {
             case 3:
               _context.prev = 3;
               _context.next = 6;
-              return this.peer.connect(signalName);
+              return this.peer.connectSignalingChannel(signalName);
             case 6:
               _context.next = 8;
               return this.peer.startOffering();
@@ -2736,7 +2835,7 @@ var ExtensionBlocks = /*#__PURE__*/function () {
             case 3:
               _context2.prev = 3;
               _context2.next = 6;
-              return this.peer.connect(signalName);
+              return this.peer.connectSignalingChannel(signalName);
             case 6:
               _context2.next = 8;
               return this.peer.startAnswering();
@@ -2758,26 +2857,91 @@ var ExtensionBlocks = /*#__PURE__*/function () {
       return connectSignal;
     }()
   }, {
-    key: "isConnected",
-    value: function isConnected() {
-      return this.peer.isConnected();
-    }
-  }, {
-    key: "disconnectPeer",
+    key: "connectPeer",
     value: function () {
-      var _disconnectPeer = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3() {
+      var _connectPeer = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee3(args) {
+        var signalName;
         return _regeneratorRuntime.wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
-              _context3.next = 2;
+              signalName = String(args.SIGNAL_NAME).trim();
+              if (!(this.peer.signalName === signalName && this.peer.isConnected())) {
+                _context3.next = 3;
+                break;
+              }
+              return _context3.abrupt("return", 'Already connected');
+            case 3:
+              _context3.prev = 3;
+              _context3.next = 6;
+              return this.peer.startSignaling(signalName);
+            case 6:
+              return _context3.abrupt("return", "Connected to peer ".concat(signalName));
+            case 9:
+              _context3.prev = 9;
+              _context3.t0 = _context3["catch"](3);
+              return _context3.abrupt("return", "Failed to connect to peer ".concat(signalName, ": ").concat(_context3.t0));
+            case 12:
+            case "end":
+              return _context3.stop();
+          }
+        }, _callee3, this, [[3, 9]]);
+      }));
+      function connectPeer(_x3) {
+        return _connectPeer.apply(this, arguments);
+      }
+      return connectPeer;
+    }()
+  }, {
+    key: "isPeerConnected",
+    value: function isPeerConnected() {
+      return this.peer.isConnected();
+    }
+  }, {
+    key: "whenPeerConnected",
+    value: function whenPeerConnected() {
+      return this.peer.isConnected();
+    }
+  }, {
+    key: "whenPeerDisconnected",
+    value: function whenPeerDisconnected() {
+      return !this.peer.isConnected();
+    }
+  }, {
+    key: "stopSignaling",
+    value: function () {
+      var _stopSignaling = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee4() {
+        return _regeneratorRuntime.wrap(function _callee4$(_context4) {
+          while (1) switch (_context4.prev = _context4.next) {
+            case 0:
+              _context4.next = 2;
+              return this.peer.stopNegotiation();
+            case 2:
+            case "end":
+              return _context4.stop();
+          }
+        }, _callee4, this);
+      }));
+      function stopSignaling() {
+        return _stopSignaling.apply(this, arguments);
+      }
+      return stopSignaling;
+    }()
+  }, {
+    key: "disconnectPeer",
+    value: function () {
+      var _disconnectPeer = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime.mark(function _callee5() {
+        return _regeneratorRuntime.wrap(function _callee5$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
+            case 0:
+              _context5.next = 2;
               return this.peer.stopNegotiation();
             case 2:
               this.peer.disconnectPeer();
             case 3:
             case "end":
-              return _context3.stop();
+              return _context5.stop();
           }
-        }, _callee3, this);
+        }, _callee5, this);
       }));
       function disconnectPeer() {
         return _disconnectPeer.apply(this, arguments);
@@ -2872,7 +3036,23 @@ var ExtensionBlocks = /*#__PURE__*/function () {
         blockIconURI: img,
         showStatusButton: false,
         blocks: [{
+          opcode: 'connectPeer',
+          blockType: BlockType$1.COMMAND,
+          text: formatMessage({
+            id: 'xcxP2P.connectPeer',
+            default: 'connect peer [SIGNAL_NAME]',
+            description: 'connect the WebRTC peer connection'
+          }),
+          arguments: {
+            SIGNAL_NAME: {
+              type: ArgumentType$1.STRING,
+              defaultValue: 'name'
+            }
+          },
+          func: 'connectPeer'
+        }, {
           opcode: 'makeSignal',
+          hideFromPalette: true,
           blockType: BlockType$1.COMMAND,
           text: formatMessage({
             id: 'xcxP2P.makeSignal',
@@ -2888,6 +3068,7 @@ var ExtensionBlocks = /*#__PURE__*/function () {
           func: 'makeSignal'
         }, {
           opcode: 'connectSignal',
+          hideFromPalette: true,
           blockType: BlockType$1.COMMAND,
           text: formatMessage({
             id: 'xcxP2P.connectSignal',
@@ -2902,13 +3083,29 @@ var ExtensionBlocks = /*#__PURE__*/function () {
           },
           func: 'connectSignal'
         }, {
-          opcode: 'isConnected',
+          opcode: 'whenPeerConnected',
+          blockType: BlockType$1.HAT,
+          text: formatMessage({
+            id: 'xcxP2P.whenPeerConnected',
+            default: 'when peer connected'
+          }),
+          isEdgeActivated: true
+        }, {
+          opcode: 'whenPeerDisconnected',
+          blockType: BlockType$1.HAT,
+          text: formatMessage({
+            id: 'xcxP2P.whenPeerDisconnected',
+            default: 'when peer disconnected'
+          }),
+          isEdgeActivated: true
+        }, {
+          opcode: 'isPeerConnected',
           blockType: BlockType$1.BOOLEAN,
           text: formatMessage({
-            id: 'xcxP2P.isConnected',
+            id: 'xcxP2P.isPeerConnected',
             default: 'connected'
           }),
-          func: 'isConnected'
+          func: 'isPeerConnected'
         }, {
           opcode: 'disconnectPeer',
           blockType: BlockType$1.COMMAND,
